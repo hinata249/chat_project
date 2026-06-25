@@ -1,0 +1,77 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>秘密のDjangoチャット</title>
+    <style>
+        body { font-family: sans-serif; max-width: 500px; margin: 20px auto; padding: 10px; }
+        #chat-box { border: 1px solid #ddd; height: 300px; overflow-y: scroll; padding: 15px; margin-bottom: 10px; background: #fafafa; }
+        .msg-row { margin-bottom: 12px; }
+        .msg-username { font-weight: bold; margin-right: 8px; color: #007bff; }
+        .msg-text { background: #fff; padding: 8px 12px; border-radius: 4px; display: inline-block; border: 1px solid #eee; }
+        #chat-form { display: flex; gap: 8px; }
+        #message-input { flex-grow: 1; padding: 8px; }
+        button { padding: 8px 16px; background: #007bff; color: white; border: none; cursor: pointer; }
+        .logout-btn { background: none; border: none; color: #ff4d4d; text-decoration: underline; padding: 0; cursor: pointer; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+    <h2>秘密のチャットルーム（ログイン中: {{ user.username }}）</h2>
+    
+    <form action="{% url 'logout' %}" method="post" style="margin-bottom: 20px;">
+        {% csrf_token %}
+        <button type="submit" class="logout-btn">ログアウトする</button>
+    </form>
+    
+    <div id="chat-box"></div>
+
+    <form id="chat-form">
+        {% csrf_token %}
+        <input type="text" id="message-input" placeholder="メッセージを入力..." autocomplete="off" required>
+        <button type="submit">送信</button>
+    </form>
+
+    <script>
+        function fetchMessages() {
+            fetch('/get_messages')
+                .then(response => response.json())
+                .then(messages => {
+                    const chatBox = document.getElementById('chat-box');
+                    const isAtBottom = chatBox.scrollHeight - chatBox.clientHeight <= chatBox.scrollTop + 50;
+                    chatBox.innerHTML = '';
+                    messages.forEach(data => {
+                        const msgRow = document.createElement('div');
+                        msgRow.className = 'msg-row';
+                        msgRow.innerHTML = `<span class="msg-username">${data.username}</span><div class="msg-text">${data.text}</div>`;
+                        chatBox.appendChild(msgRow);
+                    });
+                    if (isAtBottom) { chatBox.scrollTop = chatBox.scrollHeight; }
+                });
+        }
+
+        document.getElementById('chat-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const messageInput = document.getElementById('message-input');
+            const messageText = messageInput.value.trim();
+            
+            if (messageText !== "") {
+                fetch('/send_message', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify({ text: messageText })
+                }).then(() => {
+                    messageInput.value = "";
+                    fetchMessages();
+                });
+            }
+        });
+
+        fetchMessages();
+        setInterval(fetchMessages, 2000);
+    </script>
+</body>
+</html>

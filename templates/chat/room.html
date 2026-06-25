@@ -1,0 +1,625 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thread Chat App</title>
+    <style>
+        /* 全体のスタイル設定 */
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            color: #1e293b; 
+            font-size: 14px; 
+            background-color: #f8fafc; 
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        
+        /* 上部のヘッダーバー */
+        .chat-header { 
+            background-color: #0f172a; 
+            color: white; 
+            padding: 14px 20px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+        .chat-title { font-size: 16px; font-weight: bold; margin: 0; }
+        .user-status { font-size: 12px; display: flex; align-items: center; gap: 10px; }
+        
+        /* チャット表示エリア */
+        #chat-box { 
+            flex: 1;
+            overflow-y: auto; 
+            padding: 24px; 
+            background: #ffffff; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 20px; 
+        }
+        
+        .msg-wrapper { display: flex; flex-direction: column; width: 100%; }
+        
+        /* 🛠️ 【仕様変更】親メッセージ（トピックの始まり）の枠の色と背景を目立たせる */
+        .msg-container { 
+            display: flex; 
+            flex-direction: column; 
+            width: 100%; 
+            max-width: 100%; 
+            padding: 14px 18px;
+            background-color: #f8fafc; /* 親だけ薄い上品なブルーグレー */
+            border: 2px solid #cbd5e1; /* 親だけ枠線を少し太く、ハッキリした色に */
+            border-radius: 8px;
+            box-sizing: border-box;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        
+        /* ユーザー名と時間のヘッダー */
+        .msg-header-info { display: flex; gap: 10px; align-items: center; margin-bottom: 6px; font-size: 12px; }
+        .msg-username { font-weight: bold; color: #1e3a8a; }
+        .msg-time { color: #64748b; font-size: 11px; }
+        
+        .action-link { color: #2563eb; text-decoration: none; cursor: pointer; font-size: 11px; margin-left: 8px; font-weight: 500; }
+        .action-link:hover { text-decoration: underline; }
+        
+        .msg-text { padding: 2px 0; font-size: 14px; color: #334155; word-break: break-all; line-height: 1.6; white-space: pre-wrap; }
+        .msg-media { 
+            margin-top: 8px; 
+            width: 100%; 
+            max-width: 400px;      /* 横幅が広がりすぎないように最大幅を制限 */
+            height: auto;          /* 💡【最重要】縦横比を崩さず、横幅に合わせて自動調整する */
+            object-fit: contain;   /* 💡【新設】枠の中に綺麗に画像を収める指定 */
+            border-radius: 6px; 
+            display: block; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
+        }
+        img.msg-media { cursor: pointer; }
+        video.msg-media { background: #000; }
+        /* リアクションボタン */
+        .reaction-bar { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+        .react-btn { padding: 3px 8px; border: 1px solid #e2e8f0; background: #ffffff; border-radius: 6px; font-size: 11px; cursor: pointer; color: #475569; display: flex; align-items: center; gap: 4px; }
+        .react-btn:hover { background: #f1f5f9; border-color: #cbd5e1; }
+        
+        /* 返信スレッド用の枠 */
+        .reply-box { 
+            margin-top: 10px; 
+            gap: 12px; 
+            display: flex; 
+            flex-direction: column; 
+            width: 100%; 
+            border-left: 3px solid #3b82f6; /* スレッドの接続線を鮮やかな青に */
+            padding-left: 16px; 
+            box-sizing: border-box;
+        }
+        
+        /* 🛠️ 【仕様変更】返信（子・孫）メッセージは、親の枠色がつかないように完全に打ち消す */
+        .reply-box .msg-container { 
+            border: none !important; 
+            padding: 4px 0 !important; 
+            box-shadow: none !important;
+            background-color: transparent !important; /* 返信は背景なしのシンプルに */
+        }
+        .reply-box .msg-username { color: #475569; }
+        
+        /* 🛠️ 【新設】Slack風の「返信をしまう・広げる」トグルボタンのデザイン */
+        .thread-toggle-btn {
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            color: #475569;
+            padding: 4px 10px;
+            font-size: 11px;
+            font-weight: bold;
+            border-radius: 4px;
+            cursor: pointer;
+            width: fit-content;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .thread-toggle-btn:hover {
+            background: #e2e8f0;
+            color: #1e293b;
+        }
+
+        /* 🛠️ 【新機能】配信動画（YouTubeなど）の埋め込みプレイヤーのサイズ調整 */
+        .msg-embed-video {
+            margin-top: 8px;
+            width: 100%;
+            max-width: 480px;  /* プレイヤーの最大横幅 */
+            aspect-ratio: 16 / 9; /* 横長比率を固定 */
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: block;
+        }
+
+        
+        /* 下部入力エリアの固定構造 */
+        .bottom-area { background: #ffffff; border-top: 1px solid #e2e8f0; padding: 16px 24px; }
+        #reply-target-banner { background: #fef2f2; border: 1px solid #fee2e2; padding: 8px 16px; font-size: 12px; border-radius: 6px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; color: #991b1b; }
+        
+        #chat-form { display: flex; gap: 12px; align-items: flex-end; }
+        #message-input { flex: 1; height: 44px; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; font-family: inherit; box-sizing: border-box; resize: none; outline: none; background: #fff; transition: border 0.2s; }
+        #message-input:focus { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,0.1); }
+        
+        .file-upload-btn { background: #f1f5f9; border: 1px solid #cbd5e1; width: 44px; height: 44px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #475569; transition: all 0.2s; box-sizing: border-box; }
+        .file-upload-btn:hover { background: #e2e8f0; }
+        .file-upload-btn.selected { background: #2563eb; color: white; border-color: #2563eb; }
+        
+        .form-footer { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+        .submit-btn { padding: 0 24px; height: 44px; background: #2563eb; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: bold; transition: background 0.2s; }
+        .submit-btn:hover { background: #1d4ed8; }
+        .hint-text { color: #94a3b8; font-size: 10px; }
+        .logout-btn { background: none; border: none; color: #fff; opacity: 0.8; text-decoration: underline; cursor: pointer; font-size: 12px; }
+        .logout-btn:hover { opacity: 1; }
+    </style>
+</head>
+<body>
+    <!-- ヘッダー -->
+    <div class="chat-header">
+        <h1 class="chat-title">💬 スレッド</h1>
+        <div class="user-status">
+            現在のユーザー: <strong><span id="current-user">{{ user.username }}</span></strong> | 
+            <form action="{% url 'logout' %}" method="post" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="logout-btn">ログアウト</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- チャット表示エリア -->
+    <div id="chat-box"></div>
+
+    <!-- 下部固定入力エリア -->
+    <div class="bottom-area">
+        {% if request.user.is_authenticated %}
+        <div id="reply-target-banner" style="display: none;">
+            <span>現在 <strong id="reply-user"></strong> のメッセージへの返信スレッドを入力中...</span>
+            <span class="action-link" onclick="cancelReply()">[返信をキャンセル]</span>
+        </div>
+        
+        <form id="chat-form">
+            {% csrf_token %}
+            
+            <button type="button" class="file-upload-btn" id="clip-btn" onclick="triggerFileInput()" title="画像・動画を添付">📎</button>
+            <input type="file" id="image-input" accept="image/*" style="display: none;" onchange="fileChanged()">
+            <input type="file" id="video-input" accept="video/*" style="display: none;" onchange="fileChanged()">
+            
+            <textarea id="message-input" placeholder="新しいトピックを投稿、またはスレッドに返信..." required></textarea>
+            <div class="form-footer">
+                <button type="submit" class="submit-btn">投稿</button>
+                <span class="hint-text">Shift+Enterで改行</span>
+            </div>
+        </form>
+        {% else %}
+        <div style="text-align: center; color: #64748b; padding: 10px; font-weight: bold;">
+            🔒 スレッドに参加するにはログインが必要です。
+        </div>
+        {% endif %}
+    </div>
+    <!-- スクリプト処理 -->
+    <script>
+        const currentUser = document.getElementById('current-user').textContent.trim();
+        let selectedParentId = null;
+        
+        // ログイン状態の判定
+        const isLoggedIn = (currentUser !== "" && currentUser !== "ゲスト");
+
+        // 🛠️ 【新機能】ユーザーが開いているスレッドの親メッセージIDを記録しておく部屋（最初はすべて閉じている状態）
+        const openThreadIds = new Set();
+
+        // クリップボタンを押した時に画像か動画か選ばせる処理
+        function triggerFileInput() {
+            const choice = prompt("添付するファイルの種類を選んでください:\n1: 画像（写真・イラスト）\n2: 動画", "1");
+            if (choice === "1") {
+                document.getElementById('image-input').click();
+            } else if (choice === "2") {
+                document.getElementById('video-input').click();
+            }
+        }
+
+        // ファイルが選択されたら自動送信する処理
+        function fileChanged() {
+            const imgInput = document.getElementById('image-input');
+            const vidInput = document.getElementById('video-input');
+            if (imgInput.files.length > 0 || vidInput.files.length > 0) {
+                document.getElementById('message-input').required = false;
+                document.getElementById('chat-form').dispatchEvent(new Event('submit'));
+            }
+        }
+
+        function resetFiles() {
+            document.getElementById('image-input').value = "";
+            document.getElementById('video-input').value = "";
+            document.getElementById('message-input').required = true;
+        }
+
+        // すでに画面に表示したメッセージのIDを記録しておく部屋
+        const renderedMessageIds = new Set();
+
+        function fetchMessages() {
+            fetch('/get_messages')
+                .then(res => res.json())
+                .then(messages => {
+                    const chatBox = document.getElementById('chat-box');
+                    const isAtBottom = chatBox.scrollHeight - chatBox.clientHeight <= chatBox.scrollTop + 60;
+                    
+                    const rootMessages = [];
+                    const replyMap = {};
+                    
+                    messages.forEach(m => {
+                        if (!m.parent_id) {
+                            rootMessages.push(m);
+                        } else {
+                            if (!replyMap[m.parent_id]) replyMap[m.parent_id] = [];
+                            replyMap[m.parent_id].push(m);
+                        }
+                    });
+                    
+                    function buildTree(targetElement, messageList, isReply) {
+                        messageList.forEach(m => {
+                            // まだ画面に出ていない（新しい）メッセージだけを新着追加する
+                            if (!renderedMessageIds.has(m.id)) {
+                                renderMessage(targetElement, m, isReply);
+                                renderedMessageIds.add(m.id);
+                            } else {
+                                updateReactionsAndText(m);
+                            }
+
+                            // 🛠️ 【スレッド折りたたみ対応】
+                            if (replyMap[m.id] && replyMap[m.id].length > 0) {
+                                const myWrapper = document.getElementById('msg-wrapper-' + m.id);
+                                if (myWrapper) {
+                                    // ① 返信の件数を伝えるトグルボタンを作成・更新する
+                                    let toggleBtn = myWrapper.querySelector('.thread-toggle-btn');
+                                    if (!toggleBtn) {
+                                        toggleBtn = document.createElement('button');
+                                        toggleBtn.className = 'thread-toggle-btn';
+                                        toggleBtn.onclick = () => toggleThread(m.id);
+                                        // 本体のcontainer（カード枠）のすぐ下に配置
+                                        const mainContainer = document.getElementById('msg-id-' + m.id);
+                                        mainContainer.after(toggleBtn);
+                                    }
+                                    
+                                    // ② ユーザーが開く操作をしたかどうかで、ボタンの文字と返信エリアの表示/非表示を切り替える
+                                    const replyCount = replyMap[m.id].length;
+                                    let rArea = myWrapper.querySelector('.reply-box');
+                                    
+                                    if (openThreadIds.has(m.id)) {
+                                        toggleBtn.innerHTML = `▲ 返信を折りたたむ (${replyCount}件)`;
+                                        if (!rArea) {
+                                            rArea = document.createElement('div');
+                                            rArea.className = 'reply-box';
+                                            myWrapper.appendChild(rArea);
+                                        }
+                                        rArea.style.display = 'flex'; // 開く
+                                        buildTree(rArea, replyMap[m.id], true);
+                                    } else {
+                                        toggleBtn.innerHTML = `▶ 返信を表示する (${replyCount}件)`;
+                                        if (rArea) {
+                                            rArea.style.display = 'none'; // しまう
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    }
+                    
+                    buildTree(chatBox, rootMessages, false);
+                    if (isAtBottom) { chatBox.scrollTop = chatBox.scrollHeight; }
+                });
+        }
+
+        // 🛠️ 【新設】ボタンクリックで開閉状態を切り替える関数
+        function toggleThread(parentId) {
+            const chatBox = document.getElementById('chat-box');
+            const isAtBottom = chatBox.scrollHeight - chatBox.clientHeight <= chatBox.scrollTop + 60;
+
+            if (openThreadIds.has(parentId)) {
+                openThreadIds.delete(parentId); // 閉じる
+                // 閉じられたスレッドの中にある子・孫メッセージのIDは、再描画のために記録から一旦消去する
+                const myWrapper = document.getElementById('msg-wrapper-' + parentId);
+                if (myWrapper) {
+                    const rArea = myWrapper.querySelector('.reply-box');
+                    if (rArea) {
+                        // 返信箱の中にあるすべてのIDを renderedMessageIds から削除
+                        const innerContainers = rArea.querySelectorAll('[id^="msg-id-"]');
+                        innerContainers.forEach(el => {
+                            const cid = el.id.replace('msg-id-', '');
+                            renderedMessageIds.delete(parseInt(cid));
+                            renderedMessageIds.delete(cid);
+                            const wId = 'msg-wrapper-' + cid;
+                            const innerWrapper = document.getElementById(wId);
+                            if (innerWrapper) innerWrapper.remove();
+                        });
+                        rArea.remove(); // 返信エリア自体を一旦消去
+                    }
+                }
+            } else {
+                openThreadIds.add(parentId); // 開く
+            }
+            fetchMessages(); // 画面を再同期
+            if (isAtBottom) { chatBox.scrollTop = chatBox.scrollHeight; }
+        }
+
+        // メッセージをリロードさせず、リアクションと編集文字だけを反映する関数
+        function updateReactionsAndText(m) {
+            const container = document.getElementById('msg-id-' + m.id);
+            if (!container) return;
+            
+            const txtDiv = container.querySelector('.msg-text');
+            if (txtDiv && txtDiv.firstChild && txtDiv.firstChild.nodeType === Node.TEXT_NODE && txtDiv.firstChild.textContent !== m.text) {
+                txtDiv.firstChild.textContent = m.text;
+            }
+
+            const rBar = container.querySelector('.reaction-bar');
+            if (rBar) {
+                const r = m.reactions || {};
+                let newHTML = '';
+                
+                if (r.confirm > 0) newHTML += `<button class="react-btn" onclick="sendReaction(${m.id}, 'confirm')">👍 ${r.confirm}</button>`;
+                if (r.agree > 0) newHTML += `<button class="react-btn" onclick="sendReaction(${m.id}, 'agree')">❤️ ${r.agree}</button>`;
+                if (r.review > 0) newHTML += `<button class="react-btn" onclick="sendReaction(${m.id}, 'review')">😂 ${r.review}</button>`;
+                if (r.review2 > 0) newHTML += `<button class="react-btn" onclick="sendReaction(${m.id}, 'review2')">😮 ${r.review2}</button>`;
+                if (r.review3 > 0) newHTML += `<button class="react-btn" onclick="sendReaction(${m.id}, 'review3')">💪 ${r.review3}</button>`;
+                
+                if (rBar.innerHTML !== newHTML) {
+                    rBar.innerHTML = newHTML;
+                }
+            }
+        }
+                function renderMessage(targetEl, data, isReply) {
+            const isMe = (data.username === currentUser);
+            
+            const wrapper = document.createElement('div');
+            wrapper.id = 'msg-wrapper-' + data.id;
+            wrapper.className = 'msg-wrapper'; 
+            
+            const container = document.createElement('div');
+            container.id = 'msg-id-' + data.id;
+            container.className = 'msg-container'; 
+
+            const header = document.createElement('div');
+            header.className = 'msg-header-info';
+            
+            const meBadge = isMe ? ' <span style="color:#2563eb; font-size:10px;">(あなた)</span>' : '';
+            header.innerHTML = `<span class="msg-username">${data.username}${meBadge}</span><span class="msg-time">${data.time}</span>`;
+            
+            if (isLoggedIn) {
+                if (isMe) {
+                    const edit = document.createElement('span');
+                    edit.className = 'action-link';
+                    edit.textContent = '[編集]';
+                    edit.onclick = () => triggerEdit(data.id, data.text);
+                    header.appendChild(edit);
+                }
+                
+                const addReactLink = document.createElement('span');
+                addReactLink.className = 'action-link';
+                addReactLink.textContent = '[反応]';
+                addReactLink.onclick = () => {
+                    const type = prompt("リアクションを選択:\n1:👍  2:❤️  3:😂  4:😮  5:💪", "1");
+                    if (type === "1") sendReaction(data.id, 'confirm');
+                    if (type === "2") sendReaction(data.id, 'agree');
+                    if (type === "3") sendReaction(data.id, 'review');
+                    if (type === "4") sendReaction(data.id, 'review2');
+                    if (type === "5") sendReaction(data.id, 'review3');
+                };
+                header.appendChild(addReactLink);
+
+                const rep = document.createElement('span');
+                rep.className = 'action-link';
+                rep.textContent = '[スレッドへ返信]';
+                rep.onclick = () => { 
+                    selectedParentId = data.id; 
+                    document.getElementById('reply-user').textContent = data.username; 
+                    document.getElementById('reply-target-banner').style.display = 'flex'; 
+                    document.getElementById('message-input').focus(); 
+                };
+                header.appendChild(rep);
+            }
+            
+            const contentBlock = document.createElement('div');
+            contentBlock.style.display = 'flex';
+            contentBlock.style.flexDirection = 'column';
+            contentBlock.style.gap = '6px';
+
+            const txt = document.createElement('div');
+            txt.className = 'msg-text';
+            txt.textContent = data.text;
+            
+            if (isReply && isMe) {
+                txt.style.backgroundColor = '#e0f2fe';
+            }
+            
+            if (data.text && data.text.trim() !== "") {
+                contentBlock.appendChild(txt);
+            }
+            
+            // 【ファイルアップロードの画像表示】
+            if (data.image_url) {
+                const imgTag = document.createElement('img');
+                imgTag.src = data.image_url;
+                imgTag.className = 'msg-media';
+                imgTag.onclick = () => window.open(data.image_url, '_blank');
+                contentBlock.appendChild(imgTag);
+            }
+
+            // 【ファイルアップロードの動画表示】
+            if (data.video_url) {
+                const videoTag = document.createElement('video');
+                videoTag.src = data.video_url;
+                videoTag.className = 'msg-media';
+                videoTag.controls = true;
+                contentBlock.appendChild(videoTag);
+            }
+
+                        // 🛠️ 【機能拡張＆バグ修正版】各種配信リンクの自動検知・埋め込み・ポップアップ処理
+            if (data.text) {
+                // メッセージをスペースや改行でURLごとに分解する
+                const words = data.text.split(/\s+/);
+                
+                words.forEach(function(word) {
+                    // 📺 1. YouTubeの検知処理（チャット内で動画再生可能）
+                    if (word.includes('youtu')) {
+                        const ytMatch = word.match(/[a-zA-Z0-9_-]{11}/);
+                        if (ytMatch) {
+                            const iframeTag = document.createElement('iframe');
+                            // ⭕ 【バグ修正】スラッシュとembedを確実に挟み、正しい埋め込みURLにします
+                            iframeTag.src = "https://youtube.com" + ytMatch[0];
+                            iframeTag.className = 'msg-embed-video';
+                            iframeTag.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
+                            iframeTag.allowFullscreen = true;
+                            contentBlock.appendChild(iframeTag);
+                        }
+                    }
+                    
+                    // 📺 2. DAZNの検知処理（セキュリティ回避：チャット上にミニ画面をポップアップ）
+                    else if (word.includes('dazn.com')) {
+                        const daznCard = document.createElement('div');
+                        // スタイリッシュな黒系のカードデザイン
+                        daznCard.style.cssText = 'display: flex; flex-direction: column; justify-content: center; align-items: center; background-color: #000000; border: 1px solid #ced4da; padding: 15px; color: #ffffff; font-weight: bold; font-size: 13px; text-align: center; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); cursor: pointer; margin-top: 8px;';
+                        daznCard.innerHTML = `
+                            <div style="font-size: 15px; margin-bottom: 4px; color: #f8fafc;">🖥️ チャット上のポップアップで DAZN を開く</div>
+                            <div style="font-size: 11px; color: #a1a1aa; font-weight: normal;">※タップすると画面中央にミニブラウザが開きます</div>
+                        `;
+                        
+                        // クリックしたときに画面中央に小さな別ウィンドウを浮かび上がらせる
+                        daznCard.onclick = function() {
+                            const width = 800;
+                            const height = 600;
+                            const left = (screen.width - width) / 2;
+                            const top = (screen.height - height) / 2;
+                            window.open(word, 'daznPopup', `width=${width},height=${height},top=${top},left=${left},resizable=yes,scrollbars=yes,toolbar=no,location=no,status=no`);
+                        };
+                        contentBlock.appendChild(daznCard);
+                    }
+                    
+                    // 📺 3. NHK（NHKプラス・NHKウェブ配信）の検知処理（セキュリティ回避：チャット上にミニ画面をポップアップ）
+                    else if (word.includes('nhk.jp') || word.includes('nhk.tv') || word.includes('nhk/tv')) {
+                        const nhkCard = document.createElement('div');
+                        // NHK公式をイメージした深みのある青のデザイン
+                        nhkCard.style.cssText = 'display: flex; flex-direction: column; justify-content: center; align-items: center; background-color: #f0f4f8; border: 2px solid #1e3a8a; padding: 15px; color: #1e3a8a; font-weight: bold; font-size: 13px; text-align: center; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); cursor: pointer; margin-top: 8px;';
+                        nhkCard.innerHTML = `
+                            <div style="font-size: 15px; margin-bottom: 4px;">🖥️ チャット上のポップアップで NHK総合 を開く</div>
+                            <div style="font-size: 11px; color: #475569; font-weight: normal;">※アンケート回答・動画再生がこのミニ画面内で行えます</div>
+                        `;
+                        
+                        // クリックしたときに画面中央に小さな別ウィンドウを浮かび上がらせる
+                        nhkCard.onclick = function() {
+                            const width = 600;
+                            const height = 700;
+                            const left = (screen.width - width) / 2;
+                            const top = (screen.height - height) / 2;
+                            window.open(word, 'nhkPopup', `width=${width},height=${height},top=${top},left=${left},resizable=yes,scrollbars=yes,toolbar=no,location=no,status=no`);
+                        };
+                        contentBlock.appendChild(nhkCard);
+                    }
+                });
+            }
+
+
+            const rBar = document.createElement('div');
+            rBar.className = 'reaction-bar';
+            const r = data.reactions || {};
+            
+            if (r.confirm > 0) rBar.innerHTML += `<button class="react-btn" onclick="sendReaction(${data.id}, 'confirm')">👍 ${r.confirm}</button>`;
+            if (r.agree > 0) rBar.innerHTML += `<button class="react-btn" onclick="sendReaction(${data.id}, 'agree')">❤️ ${r.agree}</button>`;
+            if (r.review > 0) rBar.innerHTML += `<button class="react-btn" onclick="sendReaction(${data.id}, 'review')">😂 ${r.review}</button>`;
+            if (r.review2 > 0) rBar.innerHTML += `<button class="react-btn" onclick="sendReaction(${data.id}, 'review2')">😮 ${r.review2}</button>`;
+            if (r.review3 > 0) rBar.innerHTML += `<button class="react-btn" onclick="sendReaction(${data.id}, 'review3')">💪 ${r.review3}</button>`;
+            
+            container.appendChild(header);
+            container.appendChild(contentBlock);
+            container.appendChild(rBar);
+            
+            wrapper.appendChild(container);
+            targetEl.appendChild(wrapper);
+        }
+
+
+        function cancelReply() { 
+            selectedParentId = null; 
+            document.getElementById('reply-target-banner').style.display = 'none'; 
+        }
+
+        function triggerEdit(msgId, oldText) {
+            const newText = prompt("メッセージを編集してください:", oldText);
+            if (newText !== null && newText.trim() !== "") {
+                fetch('/edit_message', { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value }, 
+                    body: JSON.stringify({ id: msgId, text: newText.trim() }) 
+                }).then(() => {
+                    renderedMessageIds.delete(msgId);
+                    fetchMessages();
+                });
+            }
+        }
+
+        function sendReaction(msgId, rType) {
+            fetch('/react_message', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value }, 
+                body: JSON.stringify({ id: msgId, type: rType }) 
+            }).then(() => fetchMessages());
+        }
+
+        // メッセージ送信（FormData形式）
+        document.getElementById('chat-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const input = document.getElementById('message-input');
+            const imgInput = document.getElementById('image-input');
+            const vidInput = document.getElementById('video-input');
+            
+            const now = new Date();
+            const timeStr = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+            
+            if (input.value.trim() !== "" || imgInput.files.length > 0 || vidInput.files.length > 0) {
+                const formData = new FormData();
+                formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+                formData.append('text', input.value.trim());
+                formData.append('time', timeStr);
+                formData.append('parent_id', selectedParentId);
+                
+                if (imgInput.files.length > 0) {
+                    formData.append('image', imgInput.files[0]);
+                }
+                if (vidInput.files.length > 0) {
+                    formData.append('video', vidInput.files[0]);
+                }
+
+                // 🛠️ 【機能改善】返信を送信した親メッセージのスレッドを自動的に「開いた状態」にする
+                if (selectedParentId) {
+                    openThreadIds.add(selectedParentId);
+                }
+
+                fetch('/send_message', { 
+                    method: 'POST', 
+                    headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value }, 
+                    body: formData 
+                }).then(() => { 
+                    input.value = ""; 
+                    resetFiles(); 
+                    cancelReply(); 
+                    fetchMessages(); 
+                });
+            }
+        });
+
+        document.getElementById('message-input').addEventListener('keydown', function(e) { 
+            if (e.key === 'Enter' && !e.shiftKey) { 
+                e.preventDefault(); 
+                document.getElementById('chat-form').dispatchEvent(new Event('submit')); 
+            } 
+        });
+
+        fetchMessages();
+        setInterval(fetchMessages, 2000);
+    </script>
