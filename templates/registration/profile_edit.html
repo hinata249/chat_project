@@ -1,0 +1,106 @@
+{% load static %} <!-- 💡 【必須】これを1行目に必ず追加します -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>プロフィール</title>
+    <!-- 💡 スタイルシートを static から読み込むように変更します -->
+    <link rel="stylesheet" href="{% static 'accounts/css/profile.css' %}">
+</head>
+<body>
+
+<div class="profile-container">
+    <h2>{% if is_me %}プロフィール設定{% else %}{{ target_user.username }}のプロフィール{% endif %}</h2>
+
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <!-- アイコンエリア -->
+        <div class="form-group">
+            <label style="font-weight: bold;">現在のアイコン:</label>
+            <div style="margin-top: 10px; margin-bottom: 10px;">
+                {% if profile.icon %}
+                    <img src="{{ profile.icon.url }}" class="current-icon" alt="アイコン">
+                {% else %}
+                    <div style="width:100px; height:100px; background:#eee; border-radius:50%; line-height:100px; text-align:center; color:#888;">未設定</div>
+                {% endif %}
+            </div>
+            {% if is_me %}{{ form.icon }}{% endif %}
+        </div>
+
+        <!-- ユーザー名エリア -->
+        <div class="form-group">
+            <label style="font-weight: bold; display: block;">ユーザー名:</label>
+            {% if is_me %}
+                {{ form.username }}
+            {% else %}
+                <p style="font-size: 16px; font-weight: bold; margin: 5px 0; color: #1e3a8a;">{{ target_user.username }}</p>
+            {% endif %}
+        </div>
+
+        <!-- フォロー・フォロワー数表示欄 -->
+        <div class="stats-bar">
+            <div class="stat-item" onclick="openModal('following-modal')">フォロー: {{ following_count }}</div>
+            <div class="stat-item" onclick="openModal('followers-modal')">フォロワー: {{ followers_count }}</div>
+        </div>
+
+        <!-- ボタンエリア -->
+        <div class="form-group" style="margin-top: 30px;">
+            <a href="{% url 'chat_room' %}" class="btn btn-back">Back</a>
+            
+            {% if is_me %}
+                <button type="submit" class="btn btn-submit">更新する</button>
+            {% else %}
+                {% if is_following %}
+                    <a href="{% url 'toggle_follow' target_user.id %}" class="btn btn-following">フォロー中</a>
+                {% else %}
+                    <a href="{% url 'toggle_follow' target_user.id %}" class="btn btn-follow">フォローする</a>
+                {% endif %}
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- フォロー一覧ポップアップ（モーダル） -->
+<div id="following-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">フォロー中 <span class="close-btn" onclick="closeModal('following-modal')">&times;</span></div>
+        {% if following_count == 0 %}
+            <p style="color: #666; font-size: 13px;">ほかの人をフォローしてみましょう</p>
+        {% else %}
+            {% for f in profile.following.all %}
+                <a href="{% url 'view_profile' f.user.id %}" class="user-list-item">
+                    {% if f.icon %}<img src="{{ f.icon.url }}" class="user-list-icon">{% else %}<div class="user-list-icon" style="background:#eee; text-align:center; line-height:35px; border-radius:50%; font-size:10px; color:#aaa;">👤</div>{% endif %}
+                    <span style="font-weight: bold;">{{ f.user.username }}</span>
+                </a>
+            {% endfor %}
+        {% endif %}
+    </div>
+</div>
+
+<!-- フォロワー一覧ポップアップ（モーダル） -->
+<div id="followers-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">フォロワー <span class="close-btn" onclick="closeModal('followers-modal')">&times;</span></div>
+        {% if followers_count == 0 %}
+            <p style="color: #666; font-size: 13px;">まだだれにもフォローされていません</p>
+        {% else %}
+            {% for f in profile.followers.all %}
+                <a href="{% url 'view_profile' f.user.id %}" class="user-list-item">
+                    {% if f.icon %}<img src="{{ f.icon.url }}" class="user-list-icon">{% else %}<div class="user-list-icon" style="background:#eee; text-align:center; line-height:35px; border-radius:50%; font-size:10px; color:#aaa;">👤</div>{% endif %}
+                    <span style="font-weight: bold;">{{ f.user.username }}</span>
+                </a>
+            {% endfor %}
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+    window.onclick = function(event) {
+        if (event.target.className === 'modal') { event.target.style.display = 'none'; }
+    }
+</script>
+</body>
+</html>

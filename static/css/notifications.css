@@ -1,0 +1,123 @@
+/* ==========================================================================
+   通知画面専用スタイル（完全版）
+   ========================================================================== */
+
+/* 通知全体を囲むコンテナ（画面中央寄せ） */
+.notification-container {
+    background: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    margin: 20px 0;
+    width: 100%;
+    max-width: 768px;
+    box-sizing: border-box;
+}
+
+/* 通知の1件ごとの枠組み（要素を横並びに配置） */
+.notification-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    border-bottom: 1px solid #f1f5f9;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+/* 通知のテキスト文章エリア（横幅を自動で広げる） */
+.notification-text {
+    font-size: 14px;
+    color: #334155;
+    flex: 1; /* 残りのスペースをすべてテキストエリアに割り当てます */
+    word-break: break-all;
+}
+
+/* 通知画面内のユーザー名リンク */
+.notification-user-link {
+    color: #1e3a8a;
+    font-weight: bold;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.notification-user-link:hover {
+    text-decoration: underline;
+}
+
+/* 右側のボタン配置エリア（パーツが潰れるのを防ぐ） */
+.noti-action-area {
+    margin-right: 8px;
+    flex-shrink: 0; 
+}
+
+/* フォローバックボタンのデザイン */
+.noti-btn-fallback {
+    background-color: #2563eb;
+    color: #ffffff;
+    border: none;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: bold;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    box-sizing: border-box;
+}
+
+.noti-btn-fallback:hover {
+    background-color: #1d4ed8;
+}
+
+/* すでにフォローバックしている場合の文字表示 */
+.noti-btn-status {
+    font-size: 12px;
+    color: #64748b;
+    font-weight: bold;
+    padding: 6px 14px;
+    display: inline-block;
+}
+
+/* 通知された時間（右端に固定） */
+.notification-time {
+    font-size: 11px;
+    color: #94a3b8;
+    flex-shrink: 0;
+    text-align: right;
+    min-width: 60px;
+}
+
+/* 通知が空のときのメッセージ */
+.empty-message {
+    text-align: center;
+    color: #64748b;
+    padding: 40px 0;
+    font-size: 14px;
+}
+/* ==========================================================================
+   追加機能：投稿へのジャンプリンクスタイル
+   ========================================================================== */
+
+/* 該当するチャット投稿へ移動するリンクのデザイン */
+.noti-link-to-post {
+    color: #2563eb;
+    font-size: 12px;
+    font-weight: bold;
+    text-decoration: none;
+    padding: 6px 12px;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    background-color: #f8fafc;
+    transition: all 0.2s;
+    display: inline-block;
+}
+
+.noti-link-to-post:hover {
+    background-color: #edf2f7;
+    border-color: #3b82f6;
+    color: #1d4ed8;
+}

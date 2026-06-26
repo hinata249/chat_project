@@ -1,0 +1,16 @@
+/* アカウント作成画面のスタイル */
+body { font-family: sans-serif; background-color: #f8fafc; color: #334155; padding: 40px 20px; }
+h2 { color: #1e293b; margin-bottom: 20px; }
+form { margin-bottom: 20px; }
+
+/* Djangoが書き出すフォーム(form.as_p)の見た目を綺麗にする */
+form p { margin-bottom: 15px; }
+form input { width: 100%; max-width: 300px; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px; box-sizing: border-box; }
+
+/* 登録ボタンのスタイル */
+button[type="submit"] { padding: 8px 16px; background-color: #16a34a; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+button[type="submit"]:hover { background-color: #15803d; }
+
+/* 戻るリンクのスタイル */
+a { color: #2563eb; text-decoration: none; }
+a:hover { text-decoration: underline; }

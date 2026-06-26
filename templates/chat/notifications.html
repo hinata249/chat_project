@@ -1,0 +1,88 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>通知一覧</title>
+    <!-- チャット画面共通のスタイルシート -->
+    <link rel="stylesheet" href="{% static 'css/room.css' %}">
+    <!-- 通知専用のスタイルシート -->
+    <link rel="stylesheet" href="{% static 'css/notifications.css' %}">
+</head>
+<body>
+    <!-- ヘッダー -->
+    <div class="chat-header">
+        <h1 class="chat-title">通知一覧</h1>
+        <div class="user-status">
+            <a href="{% url 'chat_room' %}" style="color: #60a5fa; font-weight: bold; text-decoration: none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">
+                チャットに戻る
+            </a>
+        </div>
+    </div>
+
+    <!-- 通知リスト本体 -->
+    <div class="notification-container">
+        {% if not notifications %}
+            <div class="empty-message">新しい通知はありません。</div>
+        {% else %}
+            {% for n in notifications %}
+                <div class="notification-item">
+                    <!-- 送信者のアイコン写真表示 -->
+                    <div class="msg-avatar-container">
+                        {% if n.sender.profile.icon %}
+                            <img src="{{ n.sender.profile.icon.url }}" class="msg-avatar" alt="アイコン" onclick="location.href='/profile/{{ n.sender.id }}/'" style="cursor: pointer;">
+                        {% else %}
+                            <div class="msg-avatar-default" onclick="location.href='/profile/{{ n.sender.id }}/'" style="cursor: pointer;">👤</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- 通知の内容（種類に応じた出し分け） -->
+                    <div class="notification-text">
+                        <span class="notification-user-link" onclick="location.href='/profile/{{ n.sender.id }}/'">
+                            {{ n.sender.profile.nickname|default:n.sender.username }}
+                        </span> さんが
+                        
+                        {% if n.notification_type == 'reply' %}
+                            あなたの投稿にスレッドで返信しました。
+                        {% elif n.notification_type == 'follow' %}
+                            あなたをフォローしました。
+                        {% elif n.notification_type == 'reaction' %}
+                            <!-- 💡 リアクションの種類（別データ）に合わせたアイコンを自動表示します -->
+                            あなたの投稿にリアクションしました。
+                        {% else %}
+                            あなたにアクションを行いました。
+                        {% endif %}
+                    </div>
+
+                    <!-- フォローバックボタンエリア -->
+                    {% if n.notification_type == 'follow' %}
+                        <div class="noti-action-area">
+                            {% if n.sender.profile in user.profile.following.all %}
+                                <span class="noti-btn-status">フォロー中</span>
+                            {% else %}
+                                <button class="noti-btn-fallback" onclick="location.href='/profile/{{ n.sender.id }}/toggle-follow/'">
+                                    フォローバック
+                                </button>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+
+                    <!-- 💡 【新設】該当する投稿へのジャンプリンク（フォロー以外の場合のみ表示） -->
+                    <!-- 今後、Notificationモデルに message_id などの保存機能を拡張した際に完全に連動します。現在はチャット画面へ戻るリンクとして機能します -->
+                    {% if n.notification_type != 'follow' %}
+                        <div class="noti-action-area">
+                            <a href="/room/#msg-id-{{ n.message_id }}" class="noti-link-to-post">投稿を見る</a>
+                        </div>
+                    {% endif %}
+
+                    <!-- 通知された時間 -->
+                    <div class="notification-time">
+                        {{ n.created_at|date:"m/d H:i" }}
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+</body>
+</html>

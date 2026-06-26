@@ -1,27 +1,31 @@
-﻿<h2>ログイン</h2>
+﻿{% load static %}
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>ログイン</title>
+    <!-- 💡 作成した共通のlogin.cssを読み込みます -->
+    <link rel="stylesheet" href="{% static 'css/login.css' %}">
+</head>
+<body>
+
+<h2>ログイン</h2>
+
 <form method="post">
     {% csrf_token %}
     {{ form.as_p }}
     <button type="submit">ログイン</button>
 </form>
+
 <p><a href="{% url 'signup' %}">新しくアカウントを作る方はこちら</a></p>
 
-<!-- ログイン画面の適切な場所（新規登録リンクの近くなど）に追記してください -->
-<div style="margin-top: 15px; text-align: center;">
-    <hr style="border: 0; border-top: 1px solid #e2e8f0; margin-bottom: 15px;">
-    
-    <!-- 💡 ログインせずにチャット画面（chat_roomのURL）へ直接移動するボタン -->
-    <a href="{% url 'chat_room' %}" style="
-        display: inline-block;
-        padding: 10px 20px;
-        background-color: #475569; /* 落ち着いたグレー */
-        color: white;
-        text-decoration: none;
-        border-radius: 6px;
-        font-size: 13px;
-        font-weight: bold;
-        transition: background 0.2s;
-    " onmouseover="this.style.backgroundColor='#334155'" onmouseout="this.style.backgroundColor='#475569'">
+<!-- 💡 クラス名（class="..."）を指定して、CSSファイル側から見た目を制御します -->
+<div class="guest-bypass-container">
+    <hr class="guest-bypass-line">
+    <a href="{% url 'chat_room' %}" class="btn-guest-view">
         🔑 ログインせずにチャットを見る（閲覧専用）
     </a>
 </div>
+
+</body>
+</html>

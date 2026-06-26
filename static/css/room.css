@@ -1,0 +1,438 @@
+/* ==========================================================================
+   1. 全体のスタイル設定
+   ========================================================================== */
+body { 
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+    margin: 0; 
+    padding: 0; 
+    color: #1e293b; 
+    font-size: 14px; 
+    background-color: #e2e8f0; /* 全体の背景を少し濃いグレーにして、チャット枠を引き立てる */
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    align-items: center; /* チャット画面をパソコンの「真ん中」に寄せる */
+}
+
+/* 💡 【最重要】チャットアプリ全体が横に広がりすぎないように最大幅をガードする設定 */
+.chat-header,
+#chat-box,
+.bottom-area {
+    width: 100%;
+    max-width: 768px; /* パソコン画面でもスマホやタブレットと同じ見やすい横幅に制限 */
+    box-sizing: border-box;
+}
+
+/* ==========================================================================
+   2. 上部のヘッダーバー
+   ========================================================================== */
+.chat-header { 
+    background-color: #0f172a; 
+    color: white; 
+    padding: 14px 20px; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    z-index: 10;
+}
+.chat-title { font-size: 16px; font-weight: bold; margin: 0; }
+.user-status { font-size: 12px; display: flex; align-items: center; gap: 10px; }
+
+
+/* ==========================================================================
+   3. チャット表示エリア & メッセージ
+   ========================================================================== */
+#chat-box { 
+    flex: 1;
+    overflow-y: auto; 
+    padding: 24px; 
+    background: #ffffff; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 20px; 
+}
+
+.msg-wrapper { display: flex; flex-direction: column; width: 100%; }
+
+/* 親メッセージ（トピックの始まり）の枠の色と背景を目立たせる */
+.msg-container { 
+    display: flex; 
+    flex-direction: column; 
+    width: 100%; 
+    max-width: 100%; 
+    padding: 14px 18px;
+    background-color: #f8fafc; /* 親だけ薄い上品なブルーグレー */
+    border: 2px solid #cbd5e1; /* 親だけ枠線を少し太く、ハッキリした色に */
+    border-radius: 8px;
+    box-sizing: border-box;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+}
+
+/* ユーザー名と時間のヘッダー */
+.msg-header-info { display: flex; gap: 10px; align-items: center; margin-bottom: 6px; font-size: 12px; }
+.msg-username { font-weight: bold; color: #1e3a8a; }
+.msg-time { color: #64748b; font-size: 11px; }
+
+.action-link { color: #2563eb; text-decoration: none; cursor: pointer; font-size: 11px; margin-left: 8px; font-weight: 500; }
+.action-link:hover { text-decoration: underline; }
+
+.msg-text { padding: 2px 0; font-size: 14px; color: #334155; word-break: break-all; line-height: 1.6; white-space: pre-wrap; }
+.msg-media { 
+    margin-top: 8px; 
+    width: 100%; 
+    max-width: 400px;      /* 横幅が広がりすぎないように最大幅を制限 */
+    height: auto;          /* 縦横比を崩さず、横幅に合わせて自動調整する */
+    object-fit: contain;   /* 枠の中に綺麗に画像を収める指定 */
+    border-radius: 6px; 
+    display: block; 
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
+}
+img.msg-media { cursor: pointer; }
+video.msg-media { background: #000; }
+
+/* リアクションボタン */
+.reaction-bar { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+.react-btn { padding: 3px 8px; border: 1px solid #e2e8f0; background: #ffffff; border-radius: 6px; font-size: 11px; cursor: pointer; color: #475569; display: flex; align-items: center; gap: 4px; }
+.react-btn:hover { background: #f1f5f9; border-color: #cbd5e1; }
+
+/* ==========================================================================
+   4. 返信スレッド & トグル
+   ========================================================================== */
+.reply-box { 
+    margin-top: 10px; 
+    gap: 12px; 
+    display: flex; 
+    flex-direction: column; 
+    width: 100%; 
+    border-left: 3px solid #3b82f6; /* スレッドの接続線を鮮やかな青に */
+    padding-left: 16px; 
+    box-sizing: border-box;
+}
+
+/* 返信（子・孫）メッセージは、親の枠色がつかないように完全に打ち消す */
+.reply-box .msg-container { 
+    border: none !important; 
+    padding: 4px 0 !important; 
+    box-shadow: none !important;
+    background-color: transparent !important; /* 返信は背景なしのシンプルに */
+}
+.reply-box .msg-username { color: #475569; }
+
+/* 「返信をしまう・広げる」トグルボタンのデザイン */
+.thread-toggle-btn {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: bold;
+    border-radius: 4px;
+    cursor: pointer;
+    width: fit-content;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.thread-toggle-btn:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+}
+
+/* 配信動画（YouTubeなど）の埋め込みプレイヤーのサイズ調整 */
+.msg-embed-video {
+    margin-top: 8px;
+    width: 100%;
+    max-width: 480px;  /* プレイヤーの最大横幅 */
+    aspect-ratio: 16 / 9; /* 横長比率を固定 */
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    display: block;
+}
+
+/* ==========================================================================
+   5. 下部入力エリアの固定構造
+   ========================================================================== */
+/* 入力エリア全体を画面の下部に白背景で固定配置する */
+.bottom-area { 
+    background: #ffffff; 
+    border-top: 1px solid #e2e8f0; 
+    padding: 16px 24px; 
+    box-sizing: border-box;
+}
+
+/* 返信先のバー */
+#reply-target-banner { 
+    background: #fef2f2; 
+    border: 1px solid #fee2e2; 
+    padding: 8px 16px; 
+    font-size: 12px; 
+    border-radius: 6px; 
+    margin-bottom: 10px; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    color: #991b1b; 
+}
+
+/* 横並びにするフォーム本体 */
+#chat-form { 
+    display: flex; 
+    gap: 12px; 
+    align-items: flex-end; 
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* テキスト入力エリア（文字数に合わせて自動で広がるように修正） */
+#message-input { 
+    flex: 1; 
+    min-height: 44px; 
+    max-height: 150px; 
+    height: 44px; 
+    padding: 12px 16px; 
+    border: 1px solid #cbd5e1; 
+    border-radius: 8px; 
+    font-size: 13px; 
+    font-family: inherit; 
+    box-sizing: border-box; 
+    resize: none; 
+    outline: none; 
+    background: #fff; 
+    transition: border 0.2s; 
+    overflow-y: auto; 
+}
+
+#message-input:focus { 
+    border-color: #2563eb; 
+    box-shadow: 0 0 0 2px rgba(37,99,235,0.1); 
+}
+
+/* クリップ（添付）ボタン */
+.file-upload-btn { 
+    background: #f1f5f9; 
+    border: 1px solid #cbd5e1; 
+    width: 44px; 
+    height: 44px; 
+    border-radius: 8px; 
+    cursor: pointer; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    font-size: 18px; 
+    color: #475569; 
+    transition: all 0.2s; 
+    box-sizing: border-box; 
+    flex-shrink: 0; /* ボタンが潰れるのを防ぐ */
+}
+.file-upload-btn:hover { 
+    background: #e2e8f0; 
+}
+.file-upload-btn.selected { 
+    background: #2563eb; 
+    color: white; 
+    border-color: #2563eb; 
+}
+
+/* 投稿ボタンとヒントを囲む右側のブロック */
+.form-footer { 
+    display: flex; 
+    flex-direction: column; 
+    align-items: flex-end; 
+    gap: 4px; 
+    flex-shrink: 0; /* ボタンが潰れるのを防ぐ */
+}
+
+/* 投稿ボタン（高さを44pxに固定） */
+.submit-btn { 
+    padding: 0 24px; 
+    height: 44px; 
+    background: #2563eb; 
+    color: white; 
+    border: none; 
+    border-radius: 8px; 
+    cursor: pointer; 
+    font-size: 13px; 
+    font-weight: bold; 
+    transition: background 0.2s; 
+    box-sizing: border-box;
+}
+.submit-btn:hover { 
+    background: #1d4ed8; 
+}
+
+/* 注意書きのテキスト */
+.hint-text { 
+    color: #94a3b8; 
+    font-size: 10px; 
+}
+
+/* ログアウトボタン */
+.logout-btn { 
+    background: none; 
+    border: none; 
+    color: #fff; 
+    opacity: 0.8; 
+    text-decoration: underline; 
+    cursor: pointer; 
+    font-size: 12px; 
+}
+.logout-btn:hover { 
+    opacity: 1; 
+}
+
+/* ==========================================================================
+   追加機能：ヘッダーアイコン & 下部3連ナビゲーションボタン
+   ========================================================================== */
+
+/* ヘッダーの丸いアイコン枠 */
+.header-avatar-container {
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 4px;
+}
+.header-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+    border: 1px solid #475569;
+}
+.header-avatar-default {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #334155;
+    color: #cbd5e1;
+    text-align: center;
+    line-height: 26px;
+    font-size: 14px;
+    display: block;
+    box-sizing: border-box;
+}
+
+/* ナビゲーションボタンを並べる行 */
+.nav-button-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 14px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* ボタンの共通スタイル */
+.nav-btn {
+    flex: 1;
+    text-align: center;
+    padding: 10px 0;
+    font-size: 13px;
+    font-weight: bold;
+    text-decoration: none;
+    border-radius: 6px;
+    transition: background-color 0.2s, transform 0.1s;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.nav-btn:active {
+    transform: scale(0.98);
+}
+
+/* ボタン個別の色分け（お好みの色に変えられます） */
+.btn-search-user {
+    background-color: #f1f5f9;
+    color: #334155;
+    border: 1px solid #cbd5e1;
+}
+.btn-search-user:hover {
+    background-color: #e2e8f0;
+}
+
+.btn-search-post {
+    background-color: #f1f5f9;
+    color: #334155;
+    border: 1px solid #cbd5e1;
+}
+.btn-search-post:hover {
+    background-color: #e2e8f0;
+}
+
+.btn-game {
+    background-color: #ffedd5; /* 薄いオレンジ */
+    color: #ea580c;
+    border: 1px solid #fed7aa;
+}
+.btn-game:hover {
+    background-color: #fed7aa;
+}
+
+/* ==========================================================================
+   追加機能：メッセージ内アバター（アイコン）表示スタイル
+   ========================================================================== */
+.msg-avatar-container {
+    display: inline-block;
+    vertical-align: middle;
+}
+/* メッセージ用の小さなアイコン */
+.msg-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+    border: 1px solid #cbd5e1;
+}
+/* アイコン未設定時のデフォルトの見た目 */
+.msg-avatar-default {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #e2e8f0;
+    color: #64748b;
+    text-align: center;
+    line-height: 24px;
+    font-size: 12px;
+    display: block;
+    box-sizing: border-box;
+}
+/* ==========================================================================
+   追加機能：ヘッダー通知ベルマークボタンのスタイル
+   ========================================================================== */
+
+/* ベルマークボタンの土台 */
+.notification-btn {
+    position: relative;
+    display: inline-block;
+    font-size: 18px; /* ベルの大きさ */
+    text-decoration: none;
+    cursor: pointer;
+    vertical-align: middle;
+    margin-right: 12px; /* プロフィール写真との隙間 */
+    transition: transform 0.1s;
+}
+
+.notification-btn:hover {
+    transform: scale(1.1); /* ホバー時に少し大きくする効果 */
+}
+
+/* 通知の件数を表す赤い数字バッジ */
+.notification-badge {
+    position: absolute;
+    top: -4px;
+    right: -6px;
+    background-color: #ef4444; /* 鮮やかな赤色 */
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: bold;
+    min-width: 14px;
+    height: 14px;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    box-sizing: border-box;
+    border: 1px solid #0f172a; /* ヘッダーの背景色となじませる枠線 */
+}

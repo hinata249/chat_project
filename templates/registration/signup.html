@@ -1,7 +1,22 @@
-﻿<h2>アカウント作成</h2>
+﻿{% load static %}
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>アカウント作成</title>
+    <!-- 💡 新しく作成したsignup.cssを読み込みます -->
+    <link rel="stylesheet" href="{% static 'css/signup.css' %}">
+</head>
+<body>
+
+<h2>アカウント作成</h2>
 <form method="post">
     {% csrf_token %}
     {{ form.as_p }}
     <button type="submit">登録する</button>
 </form>
+
 <p><a href="{% url 'login' %}">ログイン画面に戻る</a></p>
+
+</body>
+</html>

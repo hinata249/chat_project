@@ -1,0 +1,27 @@
+<h2>ログイン</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">ログイン</button>
+</form>
+<p><a href="{% url 'signup' %}">新しくアカウントを作る方はこちら</a></p>
+
+<!-- ログイン画面の下部エリア -->
+<div style="margin-top: 15px; text-align: center;">
+    <hr style="border: 0; border-top: 1px solid #e2e8f0; margin-bottom: 15px;">
+    
+    <!-- 💡 エラーの原因だった urlタグ を取り除き、一時的に # に変更しています -->
+    <a href="#" style="
+        display: inline-block;
+        padding: 10px 20px;
+        background-color: #475569; /* 落ち着いたグレー */
+        color: white;
+        text-decoration: none;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: bold;
+        transition: background 0.2s;
+    ">
+        🔑 ログインせずにチャットを見る（閲覧専用）
+    </a>
+</div>

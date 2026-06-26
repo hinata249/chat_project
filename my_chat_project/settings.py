@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'chat', # アプリ登録
+    'accounts',
 ]
 
 MIDDLEWARE = [
@@ -81,6 +82,10 @@ USE_TZ = True
 
 # 静的ファイルの設定
 STATIC_URL = 'static/'
+
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 

@@ -1,0 +1,31 @@
+/* ログイン画面全体のスタイル（お好みで調整してください） */
+body { font-family: sans-serif; background-color: #f8fafc; color: #334155; padding: 40px 20px; }
+h2 { color: #1e293b; }
+form { margin-bottom: 20px; }
+button[type="submit"] { padding: 8px 16px; background-color: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; }
+button[type="submit"]:hover { background-color: #1d4ed8; }
+
+/* 💡 ログインなし閲覧ボタン用のスタイル */
+.guest-bypass-container {
+    margin-top: 15px;
+    text-align: center;
+}
+.guest-bypass-line {
+    border: 0;
+    border-top: 1px solid #e2e8f0;
+    margin-bottom: 15px;
+}
+.btn-guest-view {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #475569; /* 落ち着いたグレー */
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: bold;
+    transition: background 0.2s;
+}
+.btn-guest-view:hover {
+    background-color: #334155;
+}

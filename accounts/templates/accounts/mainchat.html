@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat App</title>
+    <style>
+        /* 全体のスタイル設定 */
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            color: #333; 
+            font-size: 14px; 
+            background-color: #f4f6f8; 
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        
+        /* 上部のヘッダーバー */
+        .chat-header { 
+            background-color: #1e3a8a; 
+            color: white; 
+            padding: 12px 20px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+        .chat-title { font-size: 16px; font-weight: bold; margin: 0; }
+        .user-status { font-size: 12px; display: flex; align-items: center; gap: 10px; }
+        
+        /* チャット表示エリア */
+        #chat-box { 
+            flex: 1;
+            overflow-y: auto; 
+            padding: 20px; 
+            background: #ffffff; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 16px; 
+        }
+        
+        /* メッセージ全体の枠 */
+        .msg-wrapper { display: flex; flex-direction: column; width: 100%; }
+        .msg-wrapper.left { align-items: flex-start; }
+        .msg-wrapper.right { align-items: flex-end; }
+        
+        /* 吹き出しのコンテナ */
+        .msg-container { display: flex; flex-direction: column; max-width: 70%; width: fit-content; margin-bottom: 2px; position: relative; }
+        .msg-wrapper.left > .msg-container { align-self: flex-start; align-items: flex-start; }
+        .msg-wrapper.right > .msg-container { align-self: flex-end; align-items: flex-end; }
+        
+        /* ユーザー名と時間のヘッダー */
+        .msg-header-info { display: flex; gap: 8px; align-items: center; margin-bottom: 4px; font-size: 11px; }
+        .msg-username { font-weight: bold; color: #555; }
+        .msg-wrapper.right .msg-username { color: #3b82f6; }
+        .msg-time { color: #aaa; }
+        
+        /* 操作用リンク */
+        .action-link { color: #3b82f6; text-decoration: none; cursor: pointer; font-size: 11px; margin-left: 6px; }
+        .action-link:hover { text-decoration: underline; }
+        
+        /* 吹き出しテキスト本体 */
+        .msg-text { padding: 10px 14px; border-radius: 18px; font-size: 13px; word-break: break-all; line-height: 1.5; white-space: pre-wrap; box-shadow: 0 1px 2px rgba(0,0,0,0.05); border: 1px solid transparent; }
+        .msg-wrapper.left .msg-text { background-color: #f1f5f9; color: #1e293b; border-top-left-radius: 4px; }
+        .msg-wrapper.right .msg-text { background-color: #3b82f6; color: white; border-top-right-radius: 4px; }
+        
+        /* 🛠️ 【新機能】吹き出し内の画像・動画の見た目調整 */
+        .msg-media { margin-top: 6px; max-width: 100%; border-radius: 12px; display: block; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        img.msg-media { max-height: 250px; cursor: pointer; }
+        video.msg-media { max-height: 300px; background: #000; }
+
+        /* リアクションボタン */
+        .reaction-bar { display: flex; gap: 4px; margin-top: 4px; flex-wrap: wrap; }
+        .react-btn { padding: 2px 8px; border: 1px solid #e2e8f0; background: #fff; border-radius: 12px; font-size: 11px; cursor: pointer; color: #475569; display: flex; align-items: center; gap: 2px; }
+        .react-btn:hover { background: #f1f5f9; }
+        
+        /* 返信スレッド用の枠 */
+        .reply-box { margin-top: 8px; gap: 10px; display: flex; flex-direction: column; width: 95%; }
+        .msg-wrapper.left .reply-box { border-left: 2px solid #cbd5e1; padding-left: 12px; margin-left: 12px; align-items: flex-start; }
+        .msg-wrapper.right .reply-box { border-right: 2px solid #3b82f6; padding-right: 12px; margin-right: 12px; align-items: flex-end; }
+        .reply-box .msg-container { width: 100% !important; max-width: 100% !important; }
+        .reply-box .msg-text { background-color: #f8fafc !important; color: #334155 !important; border-radius: 12px !important; border: 1px solid #e2e8f0 !important; }
+        .msg-wrapper.right .reply-box .msg-container { align-items: flex-end !important; }
+        .msg-wrapper.right .reply-box .msg-header-info { flex-direction: row-reverse; }
+        
+        /* 下部入力エリアの固定構造 */
+        .bottom-area { background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 12px 20px; }
+        #reply-target-banner { background: #fee2e2; border: 1px solid #fca5a5; padding: 6px 12px; font-size: 12px; border-radius: 6px; margin-bottom: 8px; display: none; justify-content: space-between; align-items: center; color: #991b1b; }
+        
+        #chat-form { display: flex; gap: 10px; align-items: flex-end; }
+        #message-input { flex: 1; height: 42px; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 20px; font-size: 13px; font-family: inherit; box-sizing: border-box; resize: none; outline: none; background: #fff; transition: border 0.2s; }
+        #message-input:focus { border-color: #3b82f6; }
+        
+        /* 🛠️ 【新機能】クリップボタンと隠しファイル入力のスタイル */
+        .file-upload-btn { background: #e2e8f0; border: none; width: 42px; height: 42px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; color: #475569; transition: background 0.2s; }
+        .file-upload-btn:hover { background: #cbd5e1; }
+        .file-upload-btn.selected { background: #3b82f6; color: white; }
+        
+        .form-footer { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+        .submit-btn { padding: 0 20px; height: 42px; background: #3b82f6; color: white; border: none; border-radius: 20px; cursor: pointer; font-size: 13px; font-weight: bold; transition: background 0.2s; }
+        .submit-btn:hover { background: #2563eb; }
+        .hint-text { color: #94a3b8; font-size: 10px; }
+        .logout-btn { background: none; border: none; color: #fff; opacity: 0.8; text-decoration: underline; cursor: pointer; font-size: 12px; }
+        .logout-btn:hover { opacity: 1; }
+    </style>
+</head>
+<body>
+    <!-- ヘッダー -->
+    <div class="chat-header">
+        <h1 class="chat-title">💬 ルーム（全体チャット）</h1>
+        <div class="user-status">
+            現在のユーザー: 
+            <!-- 💡 aタグ自体に id="current-user" を持たせ、中身をニックネーム対応に書き換えました -->
+            <a href="{% url 'edit_profile' %}" id="current-user" style="color: #60a5fa; font-weight: bold; text-decoration: none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">
+                {{ user.profile.nickname|default:user.username }}
+            </a> | 
+            <form action="{% url 'logout' %}" method="post" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="logout-btn">ログアウト</button>
+            </form>
+        </div>
+    </div>
+
+
+    <!-- チャット表示エリア -->
+    <div id="chat-box"></div>
+
+    <!-- 下部固定入力エリア -->
+    <div class="bottom-area">
+        {% if request.user.is_authenticated %}
+        <div id="reply-target-banner">
+            <span>現在 <strong id="reply-user"></strong> への返信を入力中...</span>
+            <span class="action-link" onclick="cancelReply()">[キャンセル]</span>
+        </div>
+        
+        <form id="chat-form">
+            {% csrf_token %}
+            
+            <!-- 🛠️ 【新機能】画像・動画選択用クリップボタンと隠しインプット -->
+            <button type="button" class="file-upload-btn" id="clip-btn" onclick="triggerFileInput()" title="画像・動画を添付">📎</button>
+            <input type="file" id="image-input" accept="image/*" style="display: none;" onchange="fileChanged()">
+            <input type="file" id="video-input" accept="video/*" style="display: none;" onchange="fileChanged()">
+            
+            <textarea id="message-input" placeholder="メッセージを入力..." required></textarea>
+            <div class="form-footer">
+                <button type="submit" class="submit-btn">送信</button>
+                <span class="hint-text">Shift+Enterで改行、Enterで送信</span>
+            </div>
+        </form>
+        {% else %}
+        <div style="text-align: center; color: #64748b; padding: 10px; font-weight: bold;">
+            🔒 チャットに参加するにはログインが必要です。
+        </div>
+        {% endif %}
+    </div>
+    <!-- スクリプト処理 -->
+
+    <script>
+    // Djangoのセキュリティ（CSRFトークン）をJavaScriptの通信ヘッダーに自動付与する設定
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        const csrftoken = getCookie('csrftoken');
+
+    // 💡 既存の fetch() 処理がある場合、headers部分に以下を追加できるように準備します
+    // (既存の送信JavaScript処理がもし動かない場合は、追ってその部分だけ綺麗に書き換えます)
+    </script>
+
+    <script>
+        const currentUser = document.getElementById('current-user').textContent.trim();
+        let selectedParentId = null;
+
+        // 🛠️ クリップボタンを押した時に画像か動画か選ばせる処理
+        function triggerFileInput() {
+            const choice = prompt("添付するファイルの種類を選んでください:\n1: 画像（写真・イラスト）\n2: 動画", "1");
+            if (choice === "1") {
+                document.getElementById('image-input').click();
+            } else if (choice === "2") {
+                document.getElementById('video-input').click();
+            }
+        }
+
+        // 🛠️ ファイルが選択されたらクリップボタンの色を青色に変える処理
+        function fileChanged() {
+            const imgInput = document.getElementById('image-input');
+            const vidInput = document.getElementById('video-input');
+            const clipBtn = document.getElementById('clip-btn');
+            
+            if (imgInput.files.length > 0 || vidInput.files.length > 0) {
+                clipBtn.classList.add('selected');
+                clipBtn.textContent = '✅';
+                document.getElementById('message-input').required = false;
+            } else {
+                clipBtn.classList.remove('selected');
+                clipBtn.textContent = '📎';
+                document.getElementById('message-input').required = true;
+            }
+        }
+
+        // 🛠️ 選択されたファイルをすべてリセットする処理
+        function resetFiles() {
+            document.getElementById('image-input').value = "";
+            document.getElementById('video-input').value = "";
+            const clipBtn = document.getElementById('clip-btn');
+            clipBtn.classList.remove('selected');
+            clipBtn.textContent = '📎';
+            document.getElementById('message-input').required = true;
+        }
+
+        
+        
+                // 🛠️ 【動画対策】すでに画面に表示したメッセージのIDを記録しておくセット
+        const renderedMessageIds = new Set();
+
+        function fetchMessages() {
+            fetch('/get_messages')
+                .then(res => res.json())
+                .then(messages => {
+                    const chatBox = document.getElementById('chat-box');
+                    const isAtBottom = chatBox.scrollHeight - chatBox.clientHeight <= chatBox.scrollTop + 60;
+                    
+                    // ❌ 以前の「chatBox.innerHTML = '';（画面全消去）」を削除して動画を消さないようにしました
+                    
+                    const rootMessages = [];
+                    const replyMap = {};
+                    
+                    messages.forEach(m => {
+                        if (!m.parent_id) {
+                            rootMessages.push(m);
+                        } else {
+                            if (!replyMap[m.parent_id]) replyMap[m.parent_id] = [];
+                            replyMap[m.parent_id].push(m);
+                        }
+                    });
+                    
+                    function buildTree(targetElement, messageList, isReply) {
+                        messageList.forEach(m => {
+                            // 🛠️ まだ画面に出ていない（新しい）メッセージだけを新着追加する
+                            if (!renderedMessageIds.has(m.id)) {
+                                renderMessage(targetElement, m, isReply);
+                                renderedMessageIds.add(m.id);
+                            } else {
+                                // 🛠️ すでに画面にあるものは、リアクションの数や編集テキストだけを書き換える
+                                updateReactionsAndText(m);
+                            }
+
+                            if (replyMap[m.id] && replyMap[m.id].length > 0) {
+                                const myWrapper = document.getElementById('msg-wrapper-' + m.id);
+                                if (myWrapper) {
+                                    let rArea = myWrapper.querySelector('.reply-box');
+                                    if (!rArea) {
+                                        rArea = document.createElement('div');
+                                        rArea.className = 'reply-box';
+                                        myWrapper.appendChild(rArea);
+                                    }
+                                    buildTree(rArea, replyMap[m.id], true);
+                                }
+                            }
+                        });
+                    }
+                    
+                    buildTree(chatBox, rootMessages, false);
+                    if (isAtBottom) { chatBox.scrollTop = chatBox.scrollHeight; }
+                });
+        }
+
+        // 🛠️ 【新設】メッセージをリロードさせず、リアクションと編集文字だけを反映する関数
+        function updateReactionsAndText(m) {
+            const container = document.getElementById('msg-id-' + m.id);
+            if (!container) return;
+            
+            // メッセージ編集の同期
+            const txtDiv = container.querySelector('.msg-text');
+            if (txtDiv && txtDiv.firstChild && txtDiv.firstChild.nodeType === Node.TEXT_NODE && txtDiv.firstChild.textContent !== m.text) {
+                txtDiv.firstChild.textContent = m.text;
+            }
+
+            // リアクションボタンの同期
+            const rBar = container.querySelector('.reaction-bar');
+            if (rBar) {
+                const r = m.reactions || {};
+                let newHTML = '';
+                if (r.confirm > 0) newHTML += `<button class="react-btn" onclick="sendReaction(${m.id}, 'confirm')">👍 ${r.confirm}</button>`;
+                if (r.agree > 0) newHTML += `<button class="react-btn" onclick="sendReaction(${m.id}, 'agree')">❤️ ${r.agree}</button>`;
+                if (r.review > 0) newHTML += `<button class="react-btn" onclick="sendReaction(${m.id}, 'review')">😂 ${r.review}</button>`;
+                if (r.review2 > 0) newHTML += `<button class="react-btn" onclick="sendReaction(${m.id}, 'review2')">😮 ${r.review2}</button>`;
+                if (r.review3 > 0) newHTML += `<button class="react-btn" onclick="sendReaction(${m.id}, 'review3')">💪 ${r.review3}</button>`;
+                
+                if (rBar.innerHTML !== newHTML) {
+                    rBar.innerHTML = newHTML;
+                }
+            }
+        }
+        function renderMessage(targetEl, data, isReply) {
+            // 💡 1. 画面のヘッダーから、更新された最新のユーザー名（ニックネーム）を常に取得します
+            const currentHeaderName = document.getElementById('current-user').innerText;
+            
+            // 💡 2. 自分が投稿したメッセージかどうかの判定（古いユーザー名、または新しい表示名のどちらでも一致するようにします）
+            const isMe = (data.username === currentUser || data.username === currentHeaderName || data.user_id == "{{ user.id }}");
+            
+            // 💡 3. データの中身を、今取得した最新の表示名に上書きして以降の描画処理へ渡します
+            if (isMe) {
+                data.username = currentHeaderName;
+            }
+
+            const wrapper = document.createElement('div');
+            wrapper.id = 'msg-wrapper-' + data.id;
+            
+            if (isReply) {
+                wrapper.className = 'msg-wrapper'; 
+            } else {
+                wrapper.className = 'msg-wrapper ' + (isMe ? 'right' : 'left');
+            }
+            
+            const container = document.createElement('div');
+            container.id = 'msg-id-' + data.id;
+            
+            if (isReply) {
+                container.className = 'msg-container left'; 
+            } else {
+                container.className = 'msg-container ' + (isMe ? 'right' : 'left');
+            }
+
+            
+            const wrapper = document.createElement('div');
+            wrapper.id = 'msg-wrapper-' + data.id;
+            
+            if (isReply) {
+                wrapper.className = 'msg-wrapper'; 
+            } else {
+                wrapper.className = 'msg-wrapper ' + (isMe ? 'right' : 'left');
+            }
+            
+            const container = document.createElement('div');
+            container.id = 'msg-id-' + data.id;
+            
+            if (isReply) {
+                container.className = 'msg-container left'; 
+            } else {
+                container.className = 'msg-container ' + (isMe ? 'right' : 'left');
+            }
+            
+            const header = document.createElement('div');
+            header.className = 'msg-header-info';
+            header.innerHTML = `<span class="msg-username">${data.username}</span><span class="msg-time">${data.time}</span>`;
+            
+            if (isMe) {
+                const edit = document.createElement('span');
+                edit.className = 'action-link';
+                edit.textContent = '[編集]';
+                edit.onclick = () => triggerEdit(data.id, data.text);
+                header.appendChild(edit);
+            }
+            
+            const addReactLink = document.createElement('span');
+            addReactLink.className = 'action-link';
+            addReactLink.textContent = '[反応]';
+            addReactLink.onclick = () => {
+                const type = prompt("リアクションを選択:\n1:👍  2:❤️  3:😂  4:😮  5:💪", "1");
+                if (type === "1") sendReaction(data.id, 'confirm');
+                if (type === "2") sendReaction(data.id, 'agree');
+                if (type === "3") sendReaction(data.id, 'review');
+                if (type === "4") sendReaction(data.id, 'review2');
+                if (type === "5") sendReaction(data.id, 'review3');
+            };
+            header.appendChild(addReactLink);
+
+            const rep = document.createElement('span');
+            rep.className = 'action-link';
+            rep.textContent = '[返信]';
+            rep.onclick = () => { 
+                selectedParentId = data.id; 
+                document.getElementById('reply-user').textContent = data.username; 
+                document.getElementById('reply-target-banner').style.display = 'flex'; 
+                document.getElementById('message-input').focus(); 
+            };
+            header.appendChild(rep);
+            
+            const contentBlock = document.createElement('div');
+            contentBlock.style.display = 'flex';
+            contentBlock.style.flexDirection = 'column';
+            contentBlock.style.gap = '6px';
+
+            const txt = document.createElement('div');
+            txt.className = 'msg-text';
+            txt.textContent = data.text;
+            
+            if (isReply && isMe) {
+                txt.style.backgroundColor = '#e0f2fe';
+            }
+            
+            if (data.text && data.text.trim() !== "") {
+                contentBlock.appendChild(txt);
+            }
+            
+            // 【画像表示】
+            if (data.image_url) {
+                const imgTag = document.createElement('img');
+                imgTag.src = data.image_url;
+                imgTag.className = 'msg-media';
+                imgTag.onclick = () => window.open(data.image_url, '_blank');
+                contentBlock.appendChild(imgTag);
+            }
+
+            // 【動画表示】再生コントロール付きのプレイヤーを埋め込む
+            if (data.video_url) {
+                const videoTag = document.createElement('video');
+                videoTag.src = data.video_url;
+                videoTag.className = 'msg-media';
+                videoTag.controls = true;
+                contentBlock.appendChild(videoTag);
+            }
+
+            const rBar = document.createElement('div');
+            rBar.className = 'reaction-bar';
+            const r = data.reactions || {};
+            
+            if (r.confirm > 0) rBar.innerHTML += `<button class="react-btn" onclick="sendReaction(${data.id}, 'confirm')">👍 ${r.confirm}</button>`;
+            if (r.agree > 0) rBar.innerHTML += `<button class="react-btn" onclick="sendReaction(${data.id}, 'agree')">❤️ ${r.agree}</button>`;
+            if (r.review > 0) rBar.innerHTML += `<button class="react-btn" onclick="sendReaction(${data.id}, 'review')">😂 ${r.review}</button>`;
+            if (r.review2 > 0) rBar.innerHTML += `<button class="react-btn" onclick="sendReaction(${data.id}, 'review2')">😮 ${r.review2}</button>`;
+            if (r.review3 > 0) rBar.innerHTML += `<button class="react-btn" onclick="sendReaction(${data.id}, 'review3')">💪 ${r.review3}</button>`;
+            
+            container.appendChild(header);
+            container.appendChild(contentBlock);
+            container.appendChild(rBar);
+            
+            wrapper.appendChild(container);
+            targetEl.appendChild(wrapper);
+        }
+        function cancelReply() { 
+            selectedParentId = null; 
+            document.getElementById('reply-target-banner').style.display = 'none'; 
+        }
+
+        function triggerEdit(msgId, oldText) {
+            const newText = prompt("メッセージを編集してください:", oldText);
+            if (newText !== null && newText.trim() !== "") {
+                fetch('/edit_message', { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value }, 
+                    body: JSON.stringify({ id: msgId, text: newText.trim() }) 
+                }).then(() => {
+                    // 編集されたメッセージの再描画を許可する
+                    renderedMessageIds.delete(msgId);
+                    fetchMessages();
+                });
+            }
+        }
+
+        function sendReaction(msgId, rType) {
+            fetch('/react_message', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value }, 
+                body: JSON.stringify({ id: msgId, type: rType }) 
+            }).then(() => fetchMessages());
+        }
+
+        // FormDataに動画オブジェクトを正しくセットして送信
+        document.getElementById('chat-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const input = document.getElementById('message-input');
+            const imgInput = document.getElementById('image-input');
+            const vidInput = document.getElementById('video-input');
+            
+            const now = new Date();
+            const timeStr = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+            
+            if (input.value.trim() !== "" || imgInput.files.length > 0 || vidInput.files.length > 0) {
+                const formData = new FormData();
+                formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+                formData.append('text', input.value.trim());
+                formData.append('time', timeStr);
+                formData.append('parent_id', selectedParentId);
+                
+                if (imgInput.files.length > 0) {
+                    formData.append('image', imgInput.files[0]);
+                }
+                if (vidInput.files.length > 0) {
+                    formData.append('video', vidInput.files[0]);
+                }
+
+                fetch('/send_message', { 
+                    method: 'POST', 
+                    headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value }, 
+                    body: formData 
+                }).then(() => { 
+                    input.value = ""; 
+                    resetFiles(); 
+                    cancelReply(); 
+                    fetchMessages(); 
+                });
+            }
+        });
+
+        document.getElementById('message-input').addEventListener('keydown', function(e) { 
+            if (e.key === 'Enter' && !e.shiftKey) { 
+                e.preventDefault(); 
+                document.getElementById('chat-form').dispatchEvent(new Event('submit')); 
+            } 
+        });
+
+        fetchMessages();
+        setInterval(fetchMessages, 2000);
+    </script>
+</body>
+</html>
+
