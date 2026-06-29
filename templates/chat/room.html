@@ -86,7 +86,11 @@
 
         <!-- ナビゲーションボタンエリア -->
         <div class="nav-button-row">
-            <a href="#" class="nav-btn btn-search-user" onclick="alert('ユーザー検索はまだ実装されていません')">🔍 人を探す</a>
+        <!-- 【修正前：履歴としてコメントアウトで残します】 -->
+        <!-- <a href="#" class="nav-btn btn-search-user" onclick="alert('ユーザー検索はまだ実装されていません')">🔍 人を探す</a> -->
+
+        <!-- 【修正後：新しく作成したモーダル（ポップアップ）を開く処理に変更しました】 -->
+            <a href="#" class="nav-btn btn-search-user" onclick="openUserSearchModal(); return false;">🔍 人を探す</a>
             <a href="#" class="nav-btn btn-search-post" onclick="openSearchModal(); return false;">📝 投稿を探す</a>
             <a href="#" class="nav-btn btn-game">🎮 ミニゲーム</a>
         </div>
@@ -94,6 +98,21 @@
 
      <!-- スクリプト処理 -->
     <script src="{% static 'js/room.js' %}?v=1"></script>
+
+    <!-- 【新規追加】＝ ＝ -->
+    <div id="user-search-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>ユーザーを探す</h2>
+                <button class="modal-close" onclick="closeUserSearchModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="user-search-input" placeholder="ユーザー名を入力..." class="search-input">
+                <button onclick="executeUserSearch()" class="search-btn">🔍 検索</button>
+                <div id="user-search-results" class="search-results" style="margin-top: 15px;"></div>
+            </div>
+        </div>
+    </div>
 
 </body>
 </html>

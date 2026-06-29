@@ -724,3 +724,131 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝
+// 💡 【新規付け足し箇所】以下を「7. 検索機能」のイベントリスナー（一番下）の直後に追記します
+// ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝ ＝
+
+/**
+ * ユーザー検索モーダル（ポップアップ）を開く
+ */
+function openUserSearchModal() {
+    const modal = document.getElementById('user-search-modal');
+    if (modal) {
+        modal.style.display = 'flex'; // 投稿検索と同様に中央揃えにするため flex を指定
+        document.getElementById('user-search-input').focus();
+    }
+}
+
+/**
+ * ユーザー検索モーダルを閉じる
+ */
+function closeUserSearchModal() {
+    const modal = document.getElementById('user-search-modal');
+    if (modal) {
+        modal.style.display = 'none';
+        document.getElementById('user-search-input').value = '';
+        document.getElementById('user-search-results').innerHTML = '';
+    }
+}
+
+/**
+ * ユーザー検索を実行する（Ajax非同期通信）
+ */
+function executeUserSearch() {
+    const inputElement = document.getElementById('user-search-input');
+    const resultContainer = document.getElementById('user-search-results');
+    
+    if (!inputElement || !resultContainer) return;
+    
+    const keyword = inputElement.value.trim();
+    if (keyword === '') {
+        alert('検索キーワードを入力してください');
+        return;
+    }
+    
+    resultContainer.innerHTML = '<p style="text-align: center; color: #64748b; padding: 20px;">検索中...</p>';
+    
+    // views.pyのsearch_usersへGETでキーワードを送信
+    fetch(`/search_users/?keyword=${encodeURIComponent(keyword)}`, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Network response was not ok');
+        return response.json();
+    })
+    .then(data => {
+        resultContainer.innerHTML = ''; // ローディング表示をクリア
+        
+        if (data.users.length === 0) {
+            resultContainer.innerHTML = '<p style="text-align: center; color: #64748b; padding: 20px;">検索結果がありません</p>';
+            return;
+        }
+        
+        // 投稿検索に合わせた綺麗なリスト表示用のコンテナ
+        const resultsDiv = document.createElement('div');
+        resultsDiv.className = 'search-results-list';
+        
+        // 【新規追加】
+        data.users.forEach(u => {
+            const resultItem = document.createElement('div');
+            resultItem.className = 'search-result-item';
+            resultItem.style.cursor = 'pointer';
+            
+            // クリックしたら対象ユーザーのプロフィール画面へジャンプ
+            resultItem.onclick = () => {
+                closeUserSearchModal();
+                window.location.href = `/profile/${u.id}/`;
+            };
+            
+            // 既存の投稿検索から参照したアバター画像の出し分けロジック
+            const avatarHtml = (u.icon_url && u.icon_url.trim() !== "") 
+                ? `<img src="${u.icon_url}" class="search-result-avatar" alt="アイコン">` 
+                : `<div class="search-result-avatar-default">👤</div>`;
+            
+            resultItem.innerHTML = `
+                <div class="search-result-header" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        ${avatarHtml}
+                        <span class="search-result-username" style="font-size: 1.1rem;">${u.username}</span>
+                    </div>
+                    <span style="font-size: 0.8rem; color: #3b82f6; font-weight: bold;">プロフィールを見る ➔</span>
+                </div>
+            `;
+            resultsDiv.appendChild(resultItem);
+        });
+        
+        resultContainer.appendChild(resultsDiv);
+    })
+    .catch(error => {
+        console.error('User search error:', error);
+        resultContainer.innerHTML = '<p style="text-align: center; color: #ef4444; padding: 20px;">エラーが発生しました</p>';
+    });
+}
+
+// ユーザー検索用のイベントリスナー初期化
+document.addEventListener('DOMContentLoaded', function() {
+    const userSearchInput = document.getElementById('user-search-input');
+    if (userSearchInput) {
+        userSearchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                executeUserSearch();
+            }
+        });
+    }
+
+    // モーダルの外枠クリックで閉じる処理
+    const userSearchModal = document.getElementById('user-search-modal');
+    if (userSearchModal) {
+        userSearchModal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeUserSearchModal();
+            }
+        });
+    }
+});
+
