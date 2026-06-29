@@ -26,7 +26,8 @@ urlpatterns = [
     path('send_message', chat_views.send_message, name='send_message'),
     path('get_messages', chat_views.get_messages, name='get_messages'),
     path('edit_message', chat_views.edit_message, name='edit_message'),
-    path('react_message', chat_views.react_message, name='react_message'), 
+    path('react_message', chat_views.react_message, name='react_message'),
+    path('search_posts', chat_views.search_posts, name='search_posts'), 
 
     # 新しいプロフィール画面用のURL（accountアプリのviewsに繋ぎます）
     path('profile/', account_views.edit_profile, name='my_profile'),
@@ -37,6 +38,7 @@ urlpatterns = [
     path('notifications/', chat_views.notification_list, name='notifications'),
 
     path('delete_message', chat_views.delete_message, name='delete_message'),
+     
 ]
 
 if settings.DEBUG:

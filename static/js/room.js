@@ -580,3 +580,128 @@ document.getElementById('chat-form').addEventListener('submit', function() {
         if (tx) tx.style.height = '44px';
     }, 10);
 });
+
+
+/* ==========================================================================
+   7. 検索機能
+========================================================================== */
+function openSearchModal() {
+    document.getElementById('search-modal').style.display = 'flex';
+    document.getElementById('search-input').focus();
+}
+
+function closeSearchModal() {
+    document.getElementById('search-modal').style.display = 'none';
+    document.getElementById('search-results').innerHTML = '';
+    document.getElementById('search-input').value = '';
+}
+
+function executeSearch() {
+    const query = document.getElementById('search-input').value.trim();
+    if (!query) {
+        alert('検索キーワードを入力してください');
+        return;
+    }
+    
+    console.log('検索開始:', query);
+    
+    fetch(`/search_posts?q=${encodeURIComponent(query)}`)
+        .then(res => {
+            console.log('レスポンスステータス:', res.status);
+            return res.json();
+        })
+        .then(data => {
+            console.log('検索結果データ:', data);
+            const resultsContainer = document.getElementById('search-results');
+            resultsContainer.innerHTML = '';
+            
+            if (data.results.length === 0) {
+                resultsContainer.innerHTML = '<p style="text-align: center; color: #64748b; padding: 20px;">検索結果がありません</p>';
+                return;
+            }
+            
+            const resultsDiv = document.createElement('div');
+            resultsDiv.className = 'search-results-list';
+            
+            data.results.forEach(msg => {
+                const resultItem = document.createElement('div');
+                resultItem.className = 'search-result-item';
+                resultItem.onclick = () => jumpToMessage(msg.id, msg.parent_id);
+                
+                const avatarHtml = (msg.icon_url && msg.icon_url.trim() !== "") 
+                    ? `<img src="${msg.icon_url}" class="search-result-avatar" alt="アイコン">` 
+                    : `<div class="search-result-avatar-default">👤</div>`;
+                
+                const replyBadge = msg.reply_count > 0 ? `<span class="reply-badge">${msg.reply_count}件の返信</span>` : '';
+                const isReplyBadge = msg.is_reply ? `<span class="reply-badge" style="background-color: #fca5a5; color: #7f1d1d;">返信</span>` : '';
+                
+                resultItem.innerHTML = `
+                    <div class="search-result-header">
+                        ${avatarHtml}
+                        <span class="search-result-username">${msg.username}</span>
+                        <span class="search-result-time">${msg.time}</span>
+                    </div>
+                    <div class="search-result-text">${msg.text.substring(0, 100)}${msg.text.length > 100 ? '...' : ''}</div>
+                    <div style="margin-top: 6px;">
+                        ${isReplyBadge}
+                        ${replyBadge}
+                    </div>
+                    
+                `;
+                
+                resultsDiv.appendChild(resultItem);
+            });
+            
+            resultsContainer.appendChild(resultsDiv);
+        })
+        .catch(err => console.error('Search error:', err));
+}
+
+function jumpToMessage(messageId, parentId) {
+    closeSearchModal();
+    
+    // 返信メッセージの場合は親メッセージのスレッドを展開
+    if (parentId) {
+        const parentElement = document.getElementById('msg-id-' + parentId);
+        if (parentElement) {
+            // 親メッセージをopenThreadIds に追加してスレッドを展開
+            openThreadIds.add(parentId);
+            fetchMessages(() => {
+                // スレッド展開後、返信メッセージにスクロール
+                const msgElement = document.getElementById('msg-id-' + messageId);
+                if (msgElement) {
+                    setTimeout(() => {
+                        msgElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        msgElement.style.backgroundColor = '#fef08a';
+                        setTimeout(() => {
+                            msgElement.style.backgroundColor = '';
+                        }, 2000);
+                    }, 200);
+                }
+            });
+            return;
+        }
+    }
+}
+// イベントリスナーの初期化（DOMLoaded後）
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('search-input');
+    if (searchInput) {
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                executeSearch();
+            }
+        });
+    }
+
+    // モーダル外クリックで閉じる
+    const searchModal = document.getElementById('search-modal');
+    if (searchModal) {
+        searchModal.addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeSearchModal();
+            }
+        });
+    }
+});
