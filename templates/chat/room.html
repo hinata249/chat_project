@@ -31,9 +31,9 @@
 
             現在のユーザー: 
             <!-- プロフィールやログアウトへのリンクも、エラー防止のため一時的にすべて「#」に統一します -->
-            <a href="#" id="current-user" onclick="location.href='/profile/'" style="color: #60a5fa; font-weight: bold; text-decoration: none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">
-                {{ user.profile.nickname|default:user.username }}
-            </a> | 
+            <a href="#" id="current-user" data-user-id="{{ request.user.id }}" onclick="location.href='/profile/'" style="color: #60a5fa; font-weight: bold; text-decoration: none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">
+    {{ user.profile.nickname|default:user.username }}
+            </a>
             <form action="#" method="post" style="display:inline;">
                 {% csrf_token %}
                 <button type="submit" class="logout-btn">ログアウト</button>
@@ -93,7 +93,7 @@
     </div>
 
      <!-- スクリプト処理 -->
-    <script src="{% static 'js/room.js' %}"></script>
+    <script src="{% static 'js/room.js' %}?v=1"></script>
 
 </body>
 </html>

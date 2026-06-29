@@ -27,13 +27,22 @@ function triggerFileInput() {
     }
 }
 
-// ファイルが選択されたら自動送信する処理
+// クリップボタンを緑チェックに変える処理を追加
 function fileChanged() {
     const imgInput = document.getElementById('image-input');
     const vidInput = document.getElementById('video-input');
+    const clipBtn = document.getElementById('clip-btn'); // 追加
+
     if (imgInput.files.length > 0 || vidInput.files.length > 0) {
         document.getElementById('message-input').required = false;
-        document.getElementById('chat-form').dispatchEvent(new Event('submit'));
+        
+        // クリップマークを緑のチェックマークに変更
+        if (clipBtn) {
+            clipBtn.innerHTML = "✅"; 
+            clipBtn.style.color = "#22c55e"; // 綺麗な黄緑色
+        }
+    } else {
+        resetFiles();
     }
 }
 
@@ -41,7 +50,15 @@ function resetFiles() {
     document.getElementById('image-input').value = "";
     document.getElementById('video-input').value = "";
     document.getElementById('message-input').required = true;
+    
+    // クリップマークを元に戻す
+    const clipBtn = document.getElementById('clip-btn');
+    if (clipBtn) {
+        clipBtn.innerHTML = "📎";
+        clipBtn.style.color = ""; // スタイル消去
+    }
 }
+
 /* ==========================================================================
    3. メッセージデータの取得とスレッド生成
    ========================================================================== */
@@ -209,11 +226,18 @@ function updateReactionsAndText(m) {
     }
 }
 
+// 【修正】 room.js の renderMessage 関数
 function renderMessage(targetEl, data, isReply) {
-    const currentHeaderName = document.getElementById('current-user').innerText;
+    const currentUserEl = document.getElementById('current-user');
+    const currentHeaderName = currentUserEl ? currentUserEl.innerText.trim() : "";
     
-    // 外部JS用の安全な「あなた」判定
-    const isMe = (data.username === currentUser || data.username === currentHeaderName);
+    // ⭕ 【重要】HTMLからログインユーザーのIDを取得
+    const currentUserId = currentUserEl ? parseInt(currentUserEl.getAttribute('data-user-id')) : null;
+    
+    // ⭕ 【重要】ID同士を比較して「あなた」か「他人」かを完璧に判定する
+    const isMe = (currentUserId && data.user_id && currentUserId === parseInt(data.user_id));
+    
+    // 画面の表示名をニックネーム等に合わせる処理
     if (isMe) {
         data.username = currentHeaderName;
     }
@@ -226,12 +250,11 @@ function renderMessage(targetEl, data, isReply) {
     container.id = 'msg-id-' + data.id;
     container.className = 'msg-container'; 
 
-     const header = document.createElement('div');
+    const header = document.createElement('div');
     header.className = 'msg-header-info';
     
     const meBadge = isMe ? ' <span style="color:#2563eb; font-size:10px;">(あなた)</span>' : '';
 
-    // 💡 URLが空文字（""）でなく、正しくデータが存在するときだけ画像を読み込むように修正します
     const avatarHtml = (data.icon_url && data.icon_url.trim() !== "") 
         ? `<img src="${data.icon_url}" class="msg-avatar" alt="アイコン">` 
         : `<div class="msg-avatar-default">👤</div>`;
@@ -244,13 +267,40 @@ function renderMessage(targetEl, data, isReply) {
         <span class="msg-time">${data.time}</span>
     `;
     
+    // 削除フラグが True だった場合の表示
+    if (data.is_deleted) {
+        container.appendChild(header);
+        const contentBlock = document.createElement('div');
+        const txt = document.createElement('div');
+        txt.className = 'msg-text';
+        txt.style.color = '#94a3b8';
+        txt.style.fontStyle = 'italic';
+        txt.textContent = data.text;
+        
+        contentBlock.appendChild(txt);
+        container.appendChild(contentBlock);
+        wrapper.appendChild(container);
+        targetEl.appendChild(wrapper);
+        return; 
+    }
+    
+    // ボタンの出し分け処理
     if (isLoggedIn) {
         if (isMe) {
+            // [編集] ボタン
             const edit = document.createElement('span');
             edit.className = 'action-link';
             edit.textContent = '[編集]';
             edit.onclick = () => triggerEdit(data.id, data.text);
             header.appendChild(edit);
+
+            // [削除] ボタン
+            const delLink = document.createElement('span');
+            delLink.className = 'action-link';
+            delLink.style.color = '#ef4444'; 
+            delLink.textContent = '[削除]';
+            delLink.onclick = () => triggerDelete(data.id); 
+            header.appendChild(delLink);
         }
         
         const addReactLink = document.createElement('span');
@@ -321,12 +371,11 @@ function renderMessage(targetEl, data, isReply) {
             if (word.includes('youtu')) {
                 const ytMatch = word.match(/[a-zA-Z0-9_-]{11}/);
                 if (ytMatch && ytMatch[0]) { 
-                    // 💡 文字列として完全に独立させて、確実にスラッシュで固定組み立てします
                     const videoId = String(ytMatch[0]).trim();
-                    const correctEmbedUrl = "https://youtube.com" + videoId;
+                    const correctEmbedUrl = "https://youtube.com" + videoId; // 💡修正：埋め込み用 /embed/ パスを保証
                     
                     const iframeTag = document.createElement('iframe');
-                    iframeTag.setAttribute('src', correctEmbedUrl); // 💡 より強力な方法でURLをセットします
+                    iframeTag.setAttribute('src', correctEmbedUrl); 
                     iframeTag.className = 'msg-embed-video';
                     iframeTag.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
                     iframeTag.allowFullscreen = true;
@@ -354,7 +403,6 @@ function renderMessage(targetEl, data, isReply) {
     targetEl.appendChild(wrapper);
 }
 
-
 /* ==========================================================================
    5. 通信処理 (POST送信・編集・リアクション)
    ========================================================================== */
@@ -376,6 +424,31 @@ function triggerEdit(msgId, oldText) {
         });
     }
 }
+
+// 【新規追加】メッセージの論理削除をサーバーに要請する関数
+function triggerDelete(msgId) {
+    if (confirm("このメッセージを消去してもよろしいですか？\n※データベース上には履歴が残りますが、画面上は非表示になります。")) {
+        fetch('/delete_message', { 
+            method: 'POST', 
+            headers: { 
+                'Content-Type': 'application/json', 
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value 
+            }, 
+            body: JSON.stringify({ id: msgId }) 
+        })
+        .then(res => {
+            if (res.ok) {
+                // 画面上の再描画キャッシュから一度IDを抹消
+                renderedMessageIds.delete(msgId);
+                // メッセージを再読み込みして「削除されました」状態に変形させる
+                fetchMessages();
+            } else {
+                alert("削除に失敗しました。権限がないか、すでに削除されている可能性があります。");
+            }
+        });
+    }
+}
+
 
 function sendReaction(msgId, rType) {
     fetch('/react_message', { 
@@ -427,13 +500,35 @@ document.getElementById('chat-form').addEventListener('submit', function(e) {
     }
 });
 
-// Shift+Enter対応の改行キーボード処理
+// Shift+Enter対応の改行キーボード処理（Enter突き抜け＆日本語変換誤爆防止版）
 document.getElementById('message-input').addEventListener('keydown', function(e) { 
+    // 日本語入力の変換確定時のEnter（isComposing）は無視する
+    if (e.isComposing) {
+        return;
+    }
+
     if (e.key === 'Enter' && !e.shiftKey) { 
         e.preventDefault(); 
-        document.getElementById('chat-form').dispatchEvent(new Event('submit')); 
+        
+        // ダイアログを閉じた直後の「Enter突き抜け」による誤送信を完全に防止
+        // 念のため、メッセージが空かつファイルも選択されていない場合は送信しない安全策
+        const imgInput = document.getElementById('image-input');
+        const vidInput = document.getElementById('video-input');
+        const hasFiles = (imgInput && imgInput.files.length > 0) || (vidInput && vidInput.files.length > 0);
+        
+        if (this.value.trim() === "" && !hasFiles) {
+            return; // 何もなければ送信しない
+        }
+
+        // フォームのHTML要素を取得して直接 submit() を呼ぶか、正しくイベントを発火させる
+        const form = document.getElementById('chat-form');
+        if (form) {
+            // requestSubmit() を使うことで、ブラウザの標準的な submit イベント（e.preventDefault等）が綺麗に連動します
+            form.requestSubmit(); 
+        }
     } 
 });
+
 
 
 /* ==========================================================================
