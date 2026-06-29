@@ -4,7 +4,7 @@ from django.contrib.auth import views as auth_views
 from django.conf import settings
 from django.conf.urls.static import static
 
-# 💡 chatアプリとaccountアプリの両方のviewsをインポートします
+#chatアプリとaccountアプリの両方のviewsをインポートします
 from chat import views as chat_views
 from accounts import views as account_views
 
