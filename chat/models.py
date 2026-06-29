@@ -13,6 +13,8 @@ class ChatMessage(models.Model):
     image = models.ImageField(upload_to='chat_images/', null=True, blank=True)
     video = models.FileField(upload_to='chat_videos/', null=True, blank=True)
 
+    is_deleted = models.BooleanField(default=False)
+
     def __str__(self):
         return f"{self.username}: {self.text[:10]}"
 

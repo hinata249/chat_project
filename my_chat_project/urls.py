@@ -35,6 +35,8 @@ urlpatterns = [
 
     # 通知一覧画面へのアクセス窓口
     path('notifications/', chat_views.notification_list, name='notifications'),
+
+    path('delete_message', chat_views.delete_message, name='delete_message'),
 ]
 
 if settings.DEBUG:

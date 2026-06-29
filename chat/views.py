@@ -116,6 +116,9 @@ def react_message(request):
 from django.contrib.auth.models import User
 from accounts.models import Profile  # フォルダ名が account の場合は account.models
 
+# ==========================================
+# 既存の get_messages を以下のように修正
+# ==========================================
 def get_messages(request):
     messages = ChatMessage.objects.all().order_by('id')
     logs = []
@@ -129,31 +132,38 @@ def get_messages(request):
             'review3': MessageReaction.objects.filter(message=m, react_type='review3').count(),
         }
         
-        image_url = m.image.url if m.image else None
-        video_url = m.video.url if m.video else None
+        # ⭕ 論理削除フラグの状態によってデータを制御
+        if m.is_deleted:
+            text_content = "このメッセージは削除されました"
+            image_url = None
+            video_url = None
+        else:
+            text_content = m.text
+            image_url = m.image.url if m.image else None
+            video_url = m.video.url if m.video else None
         
         # 発言ユーザーのプロフィールアイコンの取得処理
         icon_url = ""
         try:
-            # 投稿データのユーザー名からUserモデルを経由してProfileモデルを特定
             target_user = User.objects.get(username=m.username)
             profile, _ = Profile.objects.get_or_create(user=target_user)
             if profile and profile.icon and hasattr(profile.icon, 'url'):
                 icon_url = profile.icon.url
         except Exception:
-            icon_url = ""  # ユーザーが存在しないなどの例外時は空を返す
+            icon_url = ""
         
         logs.append({
             'id': m.id,
             'username': m.username,
-            'text': m.text,
+            'text': text_content,          # ⭕ 置き換えたテキストを格納
             'time': m.time,
             'parent_id': m.parent.id if m.parent else None,
             'reactions': reactions_count,
-            'image_url': image_url,
-            'video_url': video_url,
+            'image_url': image_url,        # ⭕ 削除時は None になる
+            'video_url': video_url,        # ⭕ 削除時は None になる
             'icon_url': icon_url,
-             'user_id': target_user.id if 'target_user' in locals() else None,
+            'user_id': target_user.id if 'target_user' in locals() else None,
+            'is_deleted': m.is_deleted,    # ⭕ フロントエンド判定用にフラグも追加
         })
     
     if request.user.is_authenticated:
@@ -162,6 +172,28 @@ def get_messages(request):
         unread_count = 0
 
     return JsonResponse({'messages': logs, 'unread_count': unread_count})
+
+
+# ==========================================
+# 【新規追加】メッセージを論理削除するビュー
+# ==========================================
+@login_required
+def delete_message(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            msg_id = int(data.get('id'))
+            
+            # 安全のため、メッセージIDと「ログインしている本人のユーザー名」が一致するものだけを対象にする
+            msg = ChatMessage.objects.get(id=msg_id, username=request.user.username)
+            
+            msg.is_deleted = True  # ⭕ 物理削除はせず、フラグをTrueにするだけ
+            msg.save()
+            return JsonResponse({'status': 'success'})
+        except (ChatMessage.DoesNotExist, ValueError, TypeError):
+            return JsonResponse({'status': 'failed', 'error': '対象のメッセージが見つからないか、権限がありません'}, status=400)
+            
+    return JsonResponse({'status': 'failed'}, status=400)
 
 def signup(request):
     if request.method == 'POST':
