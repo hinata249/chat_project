@@ -358,27 +358,61 @@ function renderMessage(targetEl, data, isReply) {
         contentBlock.appendChild(videoTag);
     }
 
-    // YouTubeリンクの自動検知・埋め込みプレイヤー処理
+        // ==========================================================================
+    // 【最終解決版】YouTubeリンクの自動検知・埋め込みプレイヤー処理
+    // ==========================================================================
     if (data.text) {
         const words = data.text.split(/\s+/);
         
         words.forEach(function(word) {
             if (word.includes('youtu')) {
-                const ytMatch = word.match(/[a-zA-Z0-9_-]{11}/);
-                if (ytMatch && ytMatch[0]) { 
-                    const videoId = String(ytMatch[0]).trim();
-                    const correctEmbedUrl = "https://youtube.com" + videoId; // 💡修正：埋め込み用 /embed/ パスを保証
+                let videoId = null;
+
+                // 1. 通常のPC用URL (watch?v=...) の場合
+                if (word.includes('v=')) {
+                    const match = word.match(/v=([a-zA-Z0-9_-]{11})/);
+                    if (match && match[1]) {
+                        videoId = match[1];
+                    }
+                } 
+                // 2. スマホ用短縮URL (youtu.be/...) の場合
+                else if (word.includes('youtu.be/')) {
+                    const match = word.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
+                    if (match && match[1]) {
+                        videoId = match[1];
+                    }
+                }
+
+                // 動画IDが正しく11文字で取得できていればプレイヤーを生成
+                if (videoId && videoId.length === 11) { 
+                    const correctEmbedUrl = "https://www.youtube.com/embed/" + videoId; 
                     
                     const iframeTag = document.createElement('iframe');
                     iframeTag.setAttribute('src', correctEmbedUrl); 
+                    iframeTag.src = correctEmbedUrl; 
                     iframeTag.className = 'msg-embed-video';
+                    
+                    // ⭕【最重要】エラー153を回避するためのリファラーポリシーを追加
+                    iframeTag.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
+                    
+                    // デザインとサイズ調整
+                    iframeTag.style.width = "100%";
+                    iframeTag.style.maxWidth = "480px";
+                    iframeTag.style.height = "270px";
+                    iframeTag.style.border = "none";
+                    iframeTag.style.borderRadius = "8px";
+                    
                     iframeTag.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
                     iframeTag.allowFullscreen = true;
+                    
                     contentBlock.appendChild(iframeTag);
                 }
             }
         });
     }
+
+
+
 
     const rBar = document.createElement('div');
     rBar.className = 'reaction-bar';
