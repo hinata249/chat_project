@@ -586,10 +586,6 @@ document.getElementById('chat-form').addEventListener('submit', function() {
     }, 10);
 });
 
-<<<<<<< HEAD
-
-=======
->>>>>>> f71a85ad5ff6315970f7da18f71f2f6f255ec767
 /* ==========================================================================
    7. 検索機能
 ========================================================================== */
@@ -654,10 +650,6 @@ function executeSearch() {
                         ${isReplyBadge}
                         ${replyBadge}
                     </div>
-<<<<<<< HEAD
-                    
-=======
->>>>>>> f71a85ad5ff6315970f7da18f71f2f6f255ec767
                 `;
                 
                 resultsDiv.appendChild(resultItem);
@@ -693,9 +685,6 @@ function jumpToMessage(messageId, parentId) {
             return;
         }
     }
-<<<<<<< HEAD
-}
-=======
     
     // 親メッセージまたは通常メッセージの場合
     const msgElement = document.getElementById('msg-id-' + messageId);
@@ -711,7 +700,6 @@ function jumpToMessage(messageId, parentId) {
     }
 }
 
->>>>>>> f71a85ad5ff6315970f7da18f71f2f6f255ec767
 // イベントリスナーの初期化（DOMLoaded後）
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('search-input');
