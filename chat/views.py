@@ -264,6 +264,65 @@ def signup(request):
     return render(request, 'registration/signup.html', {'form': form})
 
 @login_required
+def search_posts(request):
+    query = request.GET.get('q', '').strip()
+    results = []
+    
+    if query:
+        # 検索キーワードを含むすべてのメッセージを取得（親メッセージも返信も両方）
+        messages = ChatMessage.objects.filter(
+            text__icontains=query
+        ).order_by('-id')
+        
+        for m in messages:
+            reactions_count = {
+                'confirm': MessageReaction.objects.filter(message=m, react_type='confirm').count(),
+                'agree': MessageReaction.objects.filter(message=m, react_type='agree').count(),
+                'review': MessageReaction.objects.filter(message=m, react_type='review').count(),
+                'review2': MessageReaction.objects.filter(message=m, react_type='review2').count(),
+                'review3': MessageReaction.objects.filter(message=m, react_type='review3').count(),
+            }
+            
+            image_url = m.image.url if m.image else None
+            video_url = m.video.url if m.video else None
+            
+            # 発言ユーザーのプロフィールアイコンの取得処理
+            icon_url = ""
+            user_id = None
+            try:
+                target_user = User.objects.get(username=m.username)
+                profile, _ = Profile.objects.get_or_create(user=target_user)
+                if profile and profile.icon and hasattr(profile.icon, 'url'):
+                    icon_url = profile.icon.url
+                user_id = target_user.id
+            except Exception:
+                icon_url = ""
+            
+            # 返信の場合は親メッセージの情報を追加
+            parent_id = None
+            is_reply = False
+            if m.parent:
+                is_reply = True
+                parent_id = m.parent.id
+            
+            results.append({
+                'id': m.id,
+                'username': m.username,
+                'text': m.text,
+                'time': m.time,
+                'reactions': reactions_count,
+                'image_url': image_url,
+                'video_url': video_url,
+                'icon_url': icon_url,
+                'user_id': user_id,
+                'reply_count': m.replies.count(),
+                'parent_id': parent_id,
+                'is_reply': is_reply,
+            })
+    
+    return JsonResponse({'results': results, 'query': query})
+
+@login_required
 def notification_list(request):
     # 自分宛ての通知を新しい順にすべて取得
     notifications = Notification.objects.filter(receiver=request.user)

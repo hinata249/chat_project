@@ -62,7 +62,7 @@ function resetFiles() {
 /* ==========================================================================
    3. メッセージデータの取得とスレッド生成
    ========================================================================== */
-function fetchMessages() {
+function fetchMessages(callback) {
     fetch('/get_messages')
         .then(res => res.json())
         .then(data => {
@@ -156,6 +156,11 @@ function fetchMessages() {
                         }, 2000);
                     }
                 }, 300);
+            }
+            
+            // コールバック関数がある場合は実行
+            if (typeof callback === 'function') {
+                callback();
             }
         });
 }
@@ -581,7 +586,10 @@ document.getElementById('chat-form').addEventListener('submit', function() {
     }, 10);
 });
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> f71a85ad5ff6315970f7da18f71f2f6f255ec767
 /* ==========================================================================
    7. 検索機能
 ========================================================================== */
@@ -646,7 +654,10 @@ function executeSearch() {
                         ${isReplyBadge}
                         ${replyBadge}
                     </div>
+<<<<<<< HEAD
                     
+=======
+>>>>>>> f71a85ad5ff6315970f7da18f71f2f6f255ec767
                 `;
                 
                 resultsDiv.appendChild(resultItem);
@@ -682,7 +693,25 @@ function jumpToMessage(messageId, parentId) {
             return;
         }
     }
+<<<<<<< HEAD
 }
+=======
+    
+    // 親メッセージまたは通常メッセージの場合
+    const msgElement = document.getElementById('msg-id-' + messageId);
+    if (msgElement) {
+        msgElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        msgElement.style.backgroundColor = '#fef08a';
+        setTimeout(() => {
+            msgElement.style.backgroundColor = '';
+        }, 2000);
+    } else {
+        // メッセージが見つからない場合
+        alert('このメッセージは表示できません');
+    }
+}
+
+>>>>>>> f71a85ad5ff6315970f7da18f71f2f6f255ec767
 // イベントリスナーの初期化（DOMLoaded後）
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('search-input');
