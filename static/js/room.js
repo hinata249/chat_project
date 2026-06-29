@@ -45,7 +45,7 @@ function resetFiles() {
 /* ==========================================================================
    3. メッセージデータの取得とスレッド生成
    ========================================================================== */
-function fetchMessages() {
+function fetchMessages(callback) {
     fetch('/get_messages')
         .then(res => res.json())
         .then(data => {
@@ -139,6 +139,11 @@ function fetchMessages() {
                         }, 2000);
                     }
                 }, 300);
+            }
+            
+            // コールバック関数がある場合は実行
+            if (typeof callback === 'function') {
+                callback();
             }
         });
 }
@@ -496,13 +501,14 @@ function executeSearch() {
             data.results.forEach(msg => {
                 const resultItem = document.createElement('div');
                 resultItem.className = 'search-result-item';
-                resultItem.onclick = () => jumpToMessage(msg.id);
+                resultItem.onclick = () => jumpToMessage(msg.id, msg.parent_id);
                 
                 const avatarHtml = (msg.icon_url && msg.icon_url.trim() !== "") 
                     ? `<img src="${msg.icon_url}" class="search-result-avatar" alt="アイコン">` 
                     : `<div class="search-result-avatar-default">👤</div>`;
                 
                 const replyBadge = msg.reply_count > 0 ? `<span class="reply-badge">${msg.reply_count}件の返信</span>` : '';
+                const isReplyBadge = msg.is_reply ? `<span class="reply-badge" style="background-color: #fca5a5; color: #7f1d1d;">返信</span>` : '';
                 
                 resultItem.innerHTML = `
                     <div class="search-result-header">
@@ -511,7 +517,10 @@ function executeSearch() {
                         <span class="search-result-time">${msg.time}</span>
                     </div>
                     <div class="search-result-text">${msg.text.substring(0, 100)}${msg.text.length > 100 ? '...' : ''}</div>
-                    ${replyBadge}
+                    <div style="margin-top: 6px;">
+                        ${isReplyBadge}
+                        ${replyBadge}
+                    </div>
                 `;
                 
                 resultsDiv.appendChild(resultItem);
@@ -522,9 +531,33 @@ function executeSearch() {
         .catch(err => console.error('Search error:', err));
 }
 
-function jumpToMessage(messageId) {
+function jumpToMessage(messageId, parentId) {
     closeSearchModal();
-    // メッセージがまだ表示されていない場合は、スレッド展開を試みる
+    
+    // 返信メッセージの場合は親メッセージのスレッドを展開
+    if (parentId) {
+        const parentElement = document.getElementById('msg-id-' + parentId);
+        if (parentElement) {
+            // 親メッセージをopenThreadIds に追加してスレッドを展開
+            openThreadIds.add(parentId);
+            fetchMessages(() => {
+                // スレッド展開後、返信メッセージにスクロール
+                const msgElement = document.getElementById('msg-id-' + messageId);
+                if (msgElement) {
+                    setTimeout(() => {
+                        msgElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        msgElement.style.backgroundColor = '#fef08a';
+                        setTimeout(() => {
+                            msgElement.style.backgroundColor = '';
+                        }, 2000);
+                    }, 200);
+                }
+            });
+            return;
+        }
+    }
+    
+    // 親メッセージまたは通常メッセージの場合
     const msgElement = document.getElementById('msg-id-' + messageId);
     if (msgElement) {
         msgElement.scrollIntoView({ behavior: 'smooth', block: 'center' });

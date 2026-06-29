@@ -179,10 +179,9 @@ def search_posts(request):
     results = []
     
     if query:
-        # 検索キーワードを含むメッセージを取得（親メッセージのみ）
+        # 検索キーワードを含むすべてのメッセージを取得（親メッセージも返信も両方）
         messages = ChatMessage.objects.filter(
-            text__icontains=query,
-            parent__isnull=True
+            text__icontains=query
         ).order_by('-id')
         
         for m in messages:
@@ -209,6 +208,13 @@ def search_posts(request):
             except Exception:
                 icon_url = ""
             
+            # 返信の場合は親メッセージの情報を追加
+            parent_id = None
+            is_reply = False
+            if m.parent:
+                is_reply = True
+                parent_id = m.parent.id
+            
             results.append({
                 'id': m.id,
                 'username': m.username,
@@ -220,6 +226,8 @@ def search_posts(request):
                 'icon_url': icon_url,
                 'user_id': user_id,
                 'reply_count': m.replies.count(),
+                'parent_id': parent_id,
+                'is_reply': is_reply,
             })
     
     return JsonResponse({'results': results, 'query': query})
