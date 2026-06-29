@@ -44,7 +44,20 @@
     <!-- チャット表示エリア -->
     <div id="chat-box"></div>
 
-    <!-- 下部固定入力エリア -->
+    <!-- 検索結果モーダル -->
+    <div id="search-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>投稿を探す</h2>
+                <button class="modal-close" onclick="closeSearchModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="search-input" placeholder="検索キーワードを入力..." class="search-input">
+                <button onclick="executeSearch()" class="search-btn">🔍 検索</button>
+                <div id="search-results" class="search-results"></div>
+            </div>
+        </div>
+    </div>
     <div class="bottom-area">
         {% if request.user.is_authenticated %}
         <div id="reply-target-banner" style="display: none;">
@@ -73,8 +86,8 @@
 
         <!-- ナビゲーションボタンエリア -->
         <div class="nav-button-row">
-            <a href="#" class="nav-btn btn-search-user">🔍 人を探す</a>
-            <a href="#" class="nav-btn btn-search-post">📝 投稿を探す</a>
+            <a href="#" class="nav-btn btn-search-user" onclick="alert('ユーザー検索はまだ実装されていません')">🔍 人を探す</a>
+            <a href="#" class="nav-btn btn-search-post" onclick="openSearchModal(); return false;">📝 投稿を探す</a>
             <a href="#" class="nav-btn btn-game">🎮 ミニゲーム</a>
         </div>
     </div>
