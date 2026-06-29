@@ -332,3 +332,37 @@ def notification_list(request):
     notifications.update(is_read=True)
     
     return render(request, 'chat/notifications.html', {'notifications': notifications})
+
+#【新規追加】ユーザー検索(部分一致)
+from django.contrib.auth.models import User
+
+@login_required
+def search_users(request):
+    """
+    ユーザー名を部分一致で検索し、プロフィール画像付きのJSON形式で返すビュー
+    """
+    keyword = request.GET.get('keyword', '').strip()
+    if not keyword:
+        return JsonResponse({'users': []})
+    
+    # usernameカラムからキーワードを部分一致で最大20件検索
+    matching_users = User.objects.filter(username__icontains=keyword)[:20]
+    
+    # フロントエンドに渡すデータを構築
+    user_list = []
+    for u in matching_users:
+        icon_url = ""
+        # ⭕ 投稿検索のロジックを参考：プロフィールアイコンのURLを取得する
+        try:
+            if u.profile and u.profile.icon:
+                icon_url = u.profile.icon.url
+        except Exception:
+            pass # プロフィールが存在しない等のエラーを安全に回避
+            
+        user_list.append({
+            'id': u.id,
+            'username': u.username,
+            'icon_url': icon_url # 💡 アイコンのURLを新しく追加
+        })
+        
+    return JsonResponse({'users': user_list})

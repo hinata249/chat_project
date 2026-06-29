@@ -39,6 +39,8 @@ urlpatterns = [
 
     path('delete_message', chat_views.delete_message, name='delete_message'),
      
+    # 【新規追加】ユーザー検索の通信窓口URL（room.jsと連携）
+    path('search_users/', chat_views.search_users, name='search_users'),
 ]
 
 if settings.DEBUG:
