@@ -14,6 +14,7 @@ class ChatMessage(models.Model):
     video = models.FileField(upload_to='chat_videos/', null=True, blank=True)
 
     is_deleted = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.username}: {self.text[:10]}"

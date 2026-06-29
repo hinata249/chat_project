@@ -264,7 +264,7 @@ function renderMessage(targetEl, data, isReply) {
         <span class="msg-username" onclick="location.href='/profile/${data.user_id}/'" style="cursor: pointer; color: #1e3a8a;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">
             ${data.username}${meBadge}
         </span>
-        <span class="msg-time">${data.time}</span>
+        <span class="msg-time">${data.date} ${data.time}</span>
     `;
     
     // 削除フラグが True だった場合の表示
@@ -501,6 +501,8 @@ document.getElementById('chat-form').addEventListener('submit', function(e) {
     
     const now = new Date();
     const timeStr = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+    const dateStr = now.getFullYear() + '/' + String(now.getMonth() + 1).padStart(2, '0') + '/' + String(now.getDate()).padStart(2, '0');
+
     
     if (input.value.trim() !== "" || imgInput.files.length > 0 || vidInput.files.length > 0) {
         const formData = new FormData();

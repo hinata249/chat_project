@@ -40,7 +40,7 @@ def edit_profile(request, user_id=None):
         if form.is_valid():
             new_username = form.cleaned_data.get('username')
             if new_username:
-                # 💡 ログイン用IDとプロフィール用名前を「同時に同じ値」で上書き保存します
+                #  ログイン用IDとプロフィール用名前を「同時に同じ値」で上書き保存します
                 target_user.username = new_username
                 target_user.save()
                 target_profile.nickname = new_username
@@ -81,14 +81,14 @@ def toggle_follow(request, user_id):
             )
     return redirect('view_profile', user_id=user_id)
 
-# 5. チャットメッセージ一覧の取得（💡 読み出し名をログインIDに一本化）
+# 5. チャットメッセージ一覧の取得（ 読み出し名をログインIDに一本化）
 @login_required
 def get_messages(request):
     messages = Message.objects.all()
     data = []
     for m in messages:
         profile, _ = Profile.objects.get_or_create(user=m.user)
-        # 💡 チグハグを防止するため、表示名をログインID（username）に完全固定します
+        #  チグハグを防止するため、表示名をログインID（username）に完全固定します
         nickname = m.user.username
         icon_url = profile.icon.url if profile.icon else ""
 

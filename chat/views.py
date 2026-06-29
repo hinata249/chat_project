@@ -84,7 +84,7 @@ def react_message(request):
         react_type = data.get('type')
         username = request.user.username
         
-        # ⭕ 'review3' を判定条件に追加しました
+        #  'review3' を判定条件に追加しました
         if react_type in ['confirm', 'agree', 'review', 'review2', 'review3']:
             try:
                 msg = ChatMessage.objects.get(id=msg_id)
@@ -132,7 +132,7 @@ def get_messages(request):
             'review3': MessageReaction.objects.filter(message=m, react_type='review3').count(),
         }
         
-        # ⭕ 論理削除フラグの状態によってデータを制御
+        #  論理削除フラグの状態によってデータを制御
         if m.is_deleted:
             text_content = "このメッセージは削除されました"
             image_url = None
@@ -155,15 +155,16 @@ def get_messages(request):
         logs.append({
             'id': m.id,
             'username': m.username,
-            'text': text_content,          # ⭕ 置き換えたテキストを格納
+            'text': text_content,          #  置き換えたテキストを格納
             'time': m.time,
+            'date': m.created_at.strftime('%Y/%m/%d') if hasattr(m, 'created_at') else "2026/06/XX", 
             'parent_id': m.parent.id if m.parent else None,
             'reactions': reactions_count,
-            'image_url': image_url,        # ⭕ 削除時は None になる
-            'video_url': video_url,        # ⭕ 削除時は None になる
+            'image_url': image_url,        #  削除時は None になる
+            'video_url': video_url,        #  削除時は None になる
             'icon_url': icon_url,
             'user_id': target_user.id if 'target_user' in locals() else None,
-            'is_deleted': m.is_deleted,    # ⭕ フロントエンド判定用にフラグも追加
+            'is_deleted': m.is_deleted,    #  フロントエンド判定用にフラグも追加
         })
     
     if request.user.is_authenticated:
@@ -245,7 +246,7 @@ def delete_message(request):
             # 安全のため、メッセージIDと「ログインしている本人のユーザー名」が一致するものだけを対象にする
             msg = ChatMessage.objects.get(id=msg_id, username=request.user.username)
             
-            msg.is_deleted = True  # ⭕ 物理削除はせず、フラグをTrueにするだけ
+            msg.is_deleted = True  #  物理削除はせず、フラグをTrueにするだけ
             msg.save()
             return JsonResponse({'status': 'success'})
         except (ChatMessage.DoesNotExist, ValueError, TypeError):
