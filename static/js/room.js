@@ -1,11 +1,11 @@
 /* ==========================================================================
    1. 変数定義と初期設定
    ========================================================================== */
-const currentUser = document.getElementById('current-user').textContent.trim();
+const currentUser = document.getElementById('current-user') ? document.getElementById('current-user').textContent.trim() : "";
 let selectedParentId = null;
 
 // ログイン状態の判定
-const isLoggedIn = (currentUser !== "" && currentUser !== "ゲスト");
+const isLoggedIn = (currentUser !== "" && currentUser !== "ゲスト" && !currentUser.includes("ゲスト"));
 
 // ユーザーが開いているスレッドの親メッセージIDを記録しておく部屋
 const openThreadIds = new Set();
@@ -67,7 +67,6 @@ function fetchMessages(callback) {
         .then(res => res.json())
         .then(data => {
             // サーバーから返される辞書データから、メッセージ配列と未読通知数を分解して取得
-            // 辞書型（オブジェクト形式）への移行に伴うエラーを完全に防ぎます
             const messages = data.messages || [];
             const unreadCount = data.unread_count || 0;
 
@@ -136,28 +135,29 @@ function fetchMessages(callback) {
                 });
             }
             
+            // ⭕【配置修正1】ツリーを組み立てる前に、URLのハッシュ（ジャンプ先）をチェック・即消去する
+            const hash = window.location.hash;
+            let pendingJumpId = null;
+            
+            if (hash && hash.startsWith('#msg-id-')) {
+                pendingJumpId = hash.replace('#msg-id-', '');
+                // タイマー誤爆を防ぐため、検知した瞬間にURLからハッシュを最優先で即消去
+                history.replaceState(null, null, window.location.pathname + window.location.search);
+            }
+            
+            // ⭕【配置修正2】ここで「生涯で1回だけ」きれいに画面のHTMLを組み立てる！
             buildTree(chatBox, rootMessages, false);
             if (isAtBottom) { chatBox.scrollTop = chatBox.scrollHeight; }
 
-            // URLの末尾に特定のメッセージID（#msg-id-xx）が指定されている場合、その場所へ自動スクロールする処理
-            const hash = window.location.hash;
-            if (hash && hash.startsWith('#msg-id-')) {
-                // 画面上に該当のメッセージ要素が出現するまでわずかに待ってから実行
+            // ⭕【配置修正3】画面の組み立てが100%終わったこの直後に、満を持してジャンプを実行
+            if (pendingJumpId) {
                 setTimeout(() => {
-                    const targetMessage = document.querySelector(hash);
-                    if (targetMessage) {
-                        // 対象のメッセージ枠までスムーズにスクロールさせる
-                        targetMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        
-                        // ジャンプしたメッセージを目立たせるために、一瞬だけ背景を黄色く光らせる演出（お好みで）
-                        targetMessage.style.backgroundColor = '#fef08a';
-                        setTimeout(() => {
-                            targetMessage.style.backgroundColor = ''; // 元に戻す
-                        }, 2000);
-                    }
+                    // 投稿を探す機能で大成功した関数をそのまま安全に呼び出す
+                    // もし親IDが分かるならnullの代わりに第2引数に渡すと、折りたたみも自動展開されます
+                    jumpToMessage(pendingJumpId, null);
                 }, 300);
             }
-            
+     
             // コールバック関数がある場合は実行
             if (typeof callback === 'function') {
                 callback();

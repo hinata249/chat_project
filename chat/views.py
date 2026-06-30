@@ -8,14 +8,24 @@ from accounts.models import Notification
 
 
 
+# ==========================================================================
+# chat/views.py の chat_room 関数（丸ごと差し替え）
+# ==========================================================================
 def chat_room(request):
-    unread_count = Notification.objects.filter(receiver=request.user, is_read=False).count()
+    # ユーザーがログインしているか（is_authenticated）を最優先でチェックする
+    if request.user.is_authenticated:
+        # ログインしているなら、そのユーザーの未読通知をデータベースから数える
+        unread_count = Notification.objects.filter(receiver=request.user, is_read=False).count()
+    else:
+        # ログインしていない（AnonymousUser）なら、データベースは見ずに強制的に 0件 にする
+        unread_count = 0
     
     context = {
         'user': request.user,
         'unread_count': unread_count  # カウントした数値をHTMLへ引き渡す
     }
     return render(request, 'chat/room.html', context)
+
 
 @login_required
 def send_message(request):
@@ -116,9 +126,7 @@ def react_message(request):
 from django.contrib.auth.models import User
 from accounts.models import Profile  # フォルダ名が account の場合は account.models
 
-# ==========================================
-# 既存の get_messages を以下のように修正
-# ==========================================
+
 def get_messages(request):
     messages = ChatMessage.objects.all().order_by('id')
     logs = []
@@ -132,7 +140,7 @@ def get_messages(request):
             'review3': MessageReaction.objects.filter(message=m, react_type='review3').count(),
         }
         
-        #  論理削除フラグの状態によってデータを制御
+        # 論理削除フラグの状態によってデータを制御
         if m.is_deleted:
             text_content = "このメッセージは削除されました"
             image_url = None
@@ -144,33 +152,37 @@ def get_messages(request):
         
         # 発言ユーザーのプロフィールアイコンの取得処理
         icon_url = ""
+        user_id = None  # 初期値を設定しておく
         try:
             target_user = User.objects.get(username=m.username)
             profile, _ = Profile.objects.get_or_create(user=target_user)
             if profile and profile.icon and hasattr(profile.icon, 'url'):
                 icon_url = profile.icon.url
+            user_id = target_user.id # 実在するユーザーならIDを格納
         except Exception:
             icon_url = ""
+            user_id = None  # ユーザーが削除されているなどの例外時はNone
         
         logs.append({
             'id': m.id,
             'username': m.username,
-            'text': text_content,          #  置き換えたテキストを格納
+            'text': text_content,
             'time': m.time,
-            'date': m.created_at.strftime('%Y/%m/%d') if hasattr(m, 'created_at') else "2026/06/XX", 
+            'date': m.created_at.strftime('%Y/%m/%d') if hasattr(m, 'created_at') and m.created_at else "2026/06/30", 
             'parent_id': m.parent.id if m.parent else None,
             'reactions': reactions_count,
-            'image_url': image_url,        #  削除時は None になる
-            'video_url': video_url,        #  削除時は None になる
+            'image_url': image_url,
+            'video_url': video_url,
             'icon_url': icon_url,
-            'user_id': target_user.id if 'target_user' in locals() else None,
-            'is_deleted': m.is_deleted,    #  フロントエンド判定用にフラグも追加
+            'user_id': user_id,  # 安全な変数を格納
+            'is_deleted': m.is_deleted,
         })
     
+    # ゲストユーザーが来てもエラーにならないように防御
     if request.user.is_authenticated:
         unread_count = Notification.objects.filter(receiver=request.user, is_read=False).count()
     else:
-        unread_count = 0
+        unread_count = 0  # ゲストなら通知カウントは 0 に固定
 
     return JsonResponse({'messages': logs, 'unread_count': unread_count})
 

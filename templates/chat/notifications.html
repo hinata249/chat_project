@@ -72,7 +72,7 @@
                     <!-- 今後、Notificationモデルに message_id などの保存機能を拡張した際に完全に連動します。現在はチャット画面へ戻るリンクとして機能します -->
                     {% if n.notification_type != 'follow' %}
                         <div class="noti-action-area">
-                            <a href="/room/#msg-id-{{ n.message_id }}" class="noti-link-to-post">投稿を見る</a>
+                            <a href="{% url 'chat_room' %}#msg-id-{{ n.message_id }}" class="noti-link-to-post">投稿を見る</a>
                         </div>
                     {% endif %}
 
