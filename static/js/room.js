@@ -15,6 +15,7 @@ const renderedMessageIds = new Set();
 
 // 通知などでURLにメッセージハッシュが付いた状態で移動したかどうか
 let jumpedViaHash = false;
+let processedHashTarget = false; // 一度だけハッシュジャンプ処理を実行するためのフラグ
 
 
 /* ==========================================================================
@@ -146,8 +147,9 @@ function fetchMessages(callback) {
             if (shouldAutoScroll) { chatBox.scrollTop = chatBox.scrollHeight; }
 
             // URLの末尾に特定のメッセージID（#msg-id-xx）が指定されている場合、その場所へ自動スクロールする処理
-            if (hasHashTarget) {
+            if (hasHashTarget && !processedHashTarget) {
                 jumpedViaHash = true;
+                processedHashTarget = true;
                 // 画面上に該当のメッセージ要素が出現するまでわずかに待ってから実行
                 setTimeout(() => {
                     const targetMessage = document.querySelector(hash);
