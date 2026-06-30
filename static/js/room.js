@@ -160,6 +160,12 @@ function fetchMessages(callback) {
                         setTimeout(() => {
                             targetMessage.style.backgroundColor = ''; // 元に戻す
                         }, 2000);
+                        
+                        // 一度ジャンプした後はURLのハッシュを消しておく
+                        if (window.history && window.history.replaceState) {
+                            const newUrl = window.location.pathname + window.location.search;
+                            window.history.replaceState(null, '', newUrl);
+                        }
                     }
                 }, 300);
             }
