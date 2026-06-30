@@ -13,6 +13,9 @@ const openThreadIds = new Set();
 // すでに画面に表示したメッセージのIDを記録しておく部屋
 const renderedMessageIds = new Set();
 
+// 通知などでURLにメッセージハッシュが付いた状態で移動したかどうか
+let jumpedViaHash = false;
+
 
 /* ==========================================================================
    2. ファイル添付・コントロール処理
@@ -137,11 +140,14 @@ function fetchMessages(callback) {
             }
             
             buildTree(chatBox, rootMessages, false);
-            if (isAtBottom) { chatBox.scrollTop = chatBox.scrollHeight; }
+            const hash = window.location.hash;
+            const hasHashTarget = hash && hash.startsWith('#msg-id-');
+            const shouldAutoScroll = isAtBottom && !jumpedViaHash && !hasHashTarget;
+            if (shouldAutoScroll) { chatBox.scrollTop = chatBox.scrollHeight; }
 
             // URLの末尾に特定のメッセージID（#msg-id-xx）が指定されている場合、その場所へ自動スクロールする処理
-            const hash = window.location.hash;
-            if (hash && hash.startsWith('#msg-id-')) {
+            if (hasHashTarget) {
+                jumpedViaHash = true;
                 // 画面上に該当のメッセージ要素が出現するまでわずかに待ってから実行
                 setTimeout(() => {
                     const targetMessage = document.querySelector(hash);
