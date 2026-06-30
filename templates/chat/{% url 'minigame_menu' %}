@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>ミニゲームメニュー</title>
+    <link rel="stylesheet" href="{% static 'css/room.css' %}">
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 ミニゲーム</h1>
+        <div class="menu-list">
+            <a href="{% url 'game_ranking' %}" class="menu-btn">📊 ランキング</a>
+            <a href="{% url 'game_mahjong' %}" class="menu-btn">🀄 麻雀</a>
+            <a href="{% url 'game_trump' %}" class="menu-btn">🃏 トランプ</a>
+        </div>
+        <br>
+        <a href="{% url 'room' %}">← チャットに戻る</a>
+    </div>
+</body>
+</html>
