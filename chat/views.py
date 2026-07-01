@@ -185,6 +185,7 @@ def search_posts(request):
         # 検索キーワードを含むメッセージを取得（親メッセージのみ）
         messages = ChatMessage.objects.filter(
             text__icontains=query,
+            is_deleted=False
         ).order_by('-id')
         
         for m in messages:
