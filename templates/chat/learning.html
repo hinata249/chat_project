@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>麻雀学習モード</title>
+    <style>
+        body { background-color: #2c3e50; color: #ecf0f1; font-family: sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        
+        .tab-container { display: flex; width: 100%; max-width: 800px; margin-top: 40px; background-color: #1a252f; border-radius: 8px 8px 0 0; overflow: hidden; }
+        .tab-btn { flex: 1; padding: 15px; text-align: center; cursor: pointer; background: none; border: none; color: #7f8c8d; font-size: 16px; transition: 0.3s; }
+        .tab-btn:hover { color: #ecf0f1; background-color: #233140; }
+        .tab-btn.active { background-color: #34495e; color: #ecf0f1; border-bottom: 3px solid #3498db; }
+        
+        .content-area { width: 100%; max-width: 800px; background-color: #34495e; padding: 30px; border-radius: 0 0 8px 8px; box-sizing: border-box; min-height: 500px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
+        .tab-content { display: none; animation: fadeIn 0.3s ease-in-out; }
+        .tab-content.active { display: block; }
+        
+        .mode-switch { display: flex; justify-content: center; margin-bottom: 30px; gap: 15px; }
+        .mode-btn { padding: 10px 25px; border-radius: 25px; border: 2px solid #3498db; background: transparent; color: #3498db; cursor: pointer; transition: 0.2s; font-size: 15px; }
+        .mode-btn:hover { background-color: rgba(52, 152, 219, 0.1); }
+        .mode-btn.active { background-color: #3498db; color: white; }
+        .mode-content { display: none; }
+        .mode-content.active { display: block; }
+        
+        .tile-showcase { display: flex; gap: 4px; justify-content: center; margin: 15px 0; padding: 15px; background-color: rgba(0,0,0,0.2); border-radius: 8px; flex-wrap: wrap; min-height: 56px; align-items: center; }
+        .tile { background-color: #f5f5f0; border: 2px solid #ccc; border-bottom: 6px solid #b3b3b0; border-radius: 4px; width: 36px; height: 52px; display: flex; justify-content: center; align-items: center; font-size: 16px; color: #333; box-sizing: border-box; user-select: none; cursor: pointer; transition: transform 0.1s; }
+        .tile:hover { transform: translateY(-4px); }
+        .ron-tile { border: 2px solid #e74c3c; box-shadow: 0 0 8px #e74c3c; margin-left: 10px; }
+        
+        .manzu { color: #e74c3c !important; }
+        .pinzu { color: #2980b9 !important; }
+        .souzu { color: #27ae60 !important; }
+        .jihai { color: #2c3e50 !important; }
+        
+        .empty-slot { background-color: transparent !important; border: 2px dashed #7f8c8d !important; color: #7f8c8d !important; box-shadow: none !important; border-bottom: 2px dashed #7f8c8d !important;}
+        
+        .instruction-text { line-height: 1.8; font-size: 16px; text-align: center; display: none; animation: fadeIn 0.3s ease-in-out; }
+        .instruction-text.active { display: block; }
+        .instruction-text h3 { color: #f1c40f; font-size: 22px; margin-bottom: 20px; border-bottom: 1px solid #f1c40f; padding-bottom: 10px; display: inline-block;}
+        
+        .action-btn { padding: 10px 20px; font-size: 16px; background-color: #e67e22; color: white; border: none; border-radius: 5px; cursor: pointer; margin-top: 10px; }
+        .action-btn:hover { background-color: #d35400; }
+        
+        .next-btn { margin-top: 20px; padding: 12px 30px; font-size: 16px; background-color: #27ae60; color: white; border: none; border-radius: 5px; cursor: pointer; transition: 0.2s; display: none; }
+        .next-btn:hover { background-color: #2ecc71; transform: translateY(-2px); }
+        
+        .feedback { margin-top: 15px; font-size: 18px; min-height: 27px; }
+        .correct { color: #2ecc71; }
+        .incorrect { color: #e74c3c; }
+
+        .quiz-section { display: none; animation: fadeIn 0.3s ease-in-out; }
+        .quiz-section.active { display: block; }
+
+        .game-status { background-color: #34495e; border: 1px solid #7f8c8d; padding: 10px 20px; border-radius: 4px; display: inline-block; font-size: 16px; margin-bottom: 10px; }
+
+        .question-selector { margin-bottom: 20px; display: flex; justify-content: center; align-items: center; gap: 10px; background-color: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; }
+        select { padding: 8px; font-size: 16px; border-radius: 4px; border: 1px solid #7f8c8d; background-color: #ecf0f1; color: #2c3e50; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <div style="margin-top: 20px; text-align: left; width: 100%; max-width: 800px;">
+        <a href="/minigames/mahjong/" style="color: #bdc3c7; text-decoration: none; font-size: 14px; padding: 10px; background-color: #34495e; border-radius: 5px; border: 1px solid #4a637c; transition: 0.2s;">
+            ← ゲーム画面に戻る
+        </a>
+    </div>
+
+    <div class="tab-container">
+        <button class="tab-btn active" onclick="switchTab('beginner', event)">初級</button>
+        <button class="tab-btn" onclick="switchTab('intermediate', event)">中級</button>
+        <button class="tab-btn" onclick="switchTab('advanced', event)">上級</button>
+        <button class="tab-btn" onclick="switchTab('drill', event)">計算ドリル</button>
+    </div>
+
+    <div class="content-area">
+        
+        <div id="beginner" class="tab-content active">
+            <div class="mode-switch">
+                <button class="mode-btn active" onclick="switchMode('beginner', 'lecture', event)">講義モード</button>
+                <button class="mode-btn" onclick="switchMode('beginner', 'practice', event)">実践モード</button>
+            </div>
+
+            <div id="beginner-lecture" class="mode-content active">
+                <div id="step-1" class="instruction-text active">
+                    <h3>STEP 1: 麻雀牌の種類</h3>
+                    <p>麻雀牌は、数字を表す数牌と、文字が書かれた字牌に分かれます。以下の牌から字牌をすべて選んでください。</p>
+                    <div class="tile-showcase" id="quiz1-tiles">
+                        <div class="tile manzu" onclick="toggleSelect(this)">1萬</div>
+                        <div class="tile jihai" onclick="toggleSelect(this)" data-correct="true">東</div>
+                        <div class="tile pinzu" onclick="toggleSelect(this)">5筒</div>
+                        <div class="tile jihai" onclick="toggleSelect(this)" data-correct="true">白</div>
+                        <div class="tile souzu" onclick="toggleSelect(this)">9索</div>
+                    </div>
+                    <button class="action-btn" onclick="checkQuiz1()">答え合わせ</button>
+                    <p id="quiz1-feedback" class="feedback"></p>
+                    <button id="btn-next-1" class="next-btn" onclick="nextStep('step-2')">次のステップへ</button>
+                </div>
+
+                <div id="step-2" class="instruction-text">
+                    <h3>STEP 2: 面子の正体</h3>
+                    <p>数字が連なったものを順子、同じ牌が3つ揃ったものを刻子と言います。以下の3枚の組み合わせはどちらでしょう。</p>
+                    <div class="tile-showcase">
+                        <div class="tile pinzu">2筒</div>
+                        <div class="tile pinzu">3筒</div>
+                        <div class="tile pinzu">4筒</div>
+                    </div>
+                    <div style="display: flex; gap: 10px; justify-content: center;">
+                        <button class="mode-btn" onclick="checkQuiz2('shuntsu')">順子</button>
+                        <button class="mode-btn" onclick="checkQuiz2('koutsu')">刻子</button>
+                    </div>
+                    <p id="quiz2-feedback" class="feedback"></p>
+                    <button id="btn-next-2" class="next-btn" onclick="nextStep('step-3')">次のステップへ</button>
+                </div>
+
+                <div id="step-3" class="instruction-text">
+                    <h3>STEP 3: アガリの形</h3>
+                    <p>アガリの基本形は4つの面子と1つの雀頭です。以下の手牌の中で雀頭になっている牌をタップしてください。</p>
+                    <div class="tile-showcase" id="quiz3-tiles">
+                        <div class="tile manzu" onclick="checkQuiz3(false)">1萬</div>
+                        <div class="tile manzu" onclick="checkQuiz3(false)">2萬</div>
+                        <div class="tile manzu" onclick="checkQuiz3(false)">3萬</div>
+                        <div style="width: 10px;"></div>
+                        <div class="tile jihai" onclick="checkQuiz3(true)">發</div>
+                        <div class="tile jihai" onclick="checkQuiz3(true)">發</div>
+                    </div>
+                    <p id="quiz3-feedback" class="feedback"></p>
+                    <button id="btn-next-3" class="next-btn" onclick="switchMode('beginner', 'practice', {currentTarget: document.querySelectorAll('.mode-btn')[1]})">実践モードへ</button>
+                </div>
+            </div>
+
+            <div id="beginner-practice" class="mode-content instruction-text">
+                <div id="beg-prac-q1" class="quiz-section active">
+                    <h3>第1問：順子を完成させよう</h3>
+                    <p>あと1枚で順子が完成します。必要な牌を下の選択肢からタップしてください。</p>
+                    <div class="tile-showcase" id="target-q1">
+                        <div class="tile manzu">1萬</div>
+                        <div class="tile manzu">2萬</div>
+                        <div class="tile empty-slot" id="empty-slot-q1">？</div>
+                    </div>
+                    <div class="tile-showcase" id="source-q1">
+                        <div class="tile pinzu" onclick="answerBegPracQ1(this)" data-type="wrong">3筒</div>
+                        <div class="tile manzu" onclick="answerBegPracQ1(this)" data-type="correct">3萬</div>
+                        <div class="tile jihai" onclick="answerBegPracQ1(this)" data-type="wrong">東</div>
+                    </div>
+                    <p id="beg-prac-fb-1" class="feedback"></p>
+                    <button class="action-btn" onclick="resetBegPracQ1()" style="background-color: #7f8c8d;">やり直す</button>
+                    <button class="next-btn" id="beg-prac-next-1" onclick="nextQuiz('beg-prac-q1', 'beg-prac-q2')">第2問へ</button>
+                </div>
+
+                <div id="beg-prac-q2" class="quiz-section">
+                    <h3>第2問：刻子を完成させよう</h3>
+                    <p>あと1枚で刻子が完成します。必要な牌を下の選択肢からタップしてください。</p>
+                    <div class="tile-showcase" id="target-q2">
+                        <div class="tile souzu">8索</div>
+                        <div class="tile souzu">8索</div>
+                        <div class="tile empty-slot" id="empty-slot-q2">？</div>
+                    </div>
+                    <div class="tile-showcase" id="source-q2">
+                        <div class="tile souzu" onclick="answerBegPracQ2(this)" data-type="wrong">7索</div>
+                        <div class="tile souzu" onclick="answerBegPracQ2(this)" data-type="correct">8索</div>
+                        <div class="tile souzu" onclick="answerBegPracQ2(this)" data-type="wrong">9索</div>
+                    </div>
+                    <p id="beg-prac-fb-2" class="feedback"></p>
+                    <button class="action-btn" onclick="resetBegPracQ2()" style="background-color: #7f8c8d;">やり直す</button>
+                    <button class="next-btn" id="beg-prac-next-2" onclick="nextQuiz('beg-prac-q2', 'beg-prac-q3')">第3問へ</button>
+                </div>
+
+                <div id="beg-prac-q3" class="quiz-section">
+                    <h3>第3問：雀頭を探せ</h3>
+                    <p>この手牌の中で、雀頭として使える2枚組はどれでしょう。タップして答えてください。</p>
+                    <div class="tile-showcase">
+                        <div class="tile pinzu" onclick="checkBegPracQ3(false)">2筒</div>
+                        <div class="tile pinzu" onclick="checkBegPracQ3(false)">3筒</div>
+                        <div class="tile pinzu" onclick="checkBegPracQ3(false)">4筒</div>
+                        <div style="width: 10px;"></div>
+                        <div class="tile manzu" onclick="checkBegPracQ3(true)">7萬</div>
+                        <div class="tile manzu" onclick="checkBegPracQ3(true)">7萬</div>
+                        <div style="width: 10px;"></div>
+                        <div class="tile souzu" onclick="checkBegPracQ3(false)">9索</div>
+                    </div>
+                    <p id="beg-prac-fb-3" class="feedback"></p>
+                    <button class="next-btn" id="beg-prac-next-3" onclick="nextQuiz('beg-prac-q3', 'beg-prac-q4')">第4問へ</button>
+                </div>
+
+                <div id="beg-prac-q4" class="quiz-section">
+                    <h3>第4問：待ち牌はどれ？</h3>
+                    <p>この形は両面待ちと呼ばれます。あと1枚で順子が完成するアガリ牌をすべて選んで答え合わせを押してください。</p>
+                    <div class="tile-showcase">
+                        <div class="tile pinzu">4筒</div>
+                        <div class="tile pinzu">5筒</div>
+                    </div>
+                    <div class="tile-showcase" id="beg-prac-q4-tiles">
+                        <div class="tile pinzu" onclick="toggleSelect(this)" data-correct="true">3筒</div>
+                        <div class="tile pinzu" onclick="toggleSelect(this)" data-correct="false">4筒</div>
+                        <div class="tile pinzu" onclick="toggleSelect(this)" data-correct="true">6筒</div>
+                        <div class="tile pinzu" onclick="toggleSelect(this)" data-correct="false">7筒</div>
+                    </div>
+                    <button class="action-btn" onclick="checkBegPracQ4()">答え合わせ</button>
+                    <p id="beg-prac-fb-4" class="feedback"></p>
+                    <button class="next-btn" id="beg-prac-next-4" onclick="nextQuiz('beg-prac-q4', 'beg-prac-q5')">第5問へ</button>
+                </div>
+
+                <div id="beg-prac-q5" class="quiz-section">
+                    <h3>第5問：アガリの完成</h3>
+                    <p>ついにテンパイです。手牌を完成させる最後のアガリ牌をタップしてください。</p>
+                    <div class="tile-showcase">
+                        <div class="tile manzu">1萬</div><div class="tile manzu">2萬</div><div class="tile manzu">3萬</div>
+                        <div style="width: 5px;"></div>
+                        <div class="tile pinzu">5筒</div><div class="tile pinzu">5筒</div><div class="tile pinzu">5筒</div>
+                        <div style="width: 5px;"></div>
+                        <div class="tile souzu">7索</div><div class="tile souzu">8索</div><div class="tile souzu">9索</div>
+                        <div style="width: 5px;"></div>
+                        <div class="tile jihai">白</div><div class="tile jihai">白</div>
+                        <div style="width: 5px;"></div>
+                        <div class="tile manzu">8萬</div><div class="tile manzu">9萬</div>
+                    </div>
+                    <div class="tile-showcase">
+                        <div class="tile manzu" onclick="checkBegPracQ5(true)">7萬</div>
+                        <div class="tile jihai" onclick="checkBegPracQ5(false)">中</div>
+                        <div class="tile pinzu" onclick="checkBegPracQ5(false)">5筒</div>
+                    </div>
+                    <p id="beg-prac-fb-5" class="feedback"></p>
+                    <button class="next-btn" id="beg-prac-next-5" onclick="alert('初級編クリアです。中級編へ進みましょう。'); switchTab('intermediate', {currentTarget: document.querySelectorAll('.tab-btn')[1]});">初級編クリア</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="intermediate" class="tab-content">
+            <div class="mode-switch">
+                <button class="mode-btn active" onclick="switchMode('intermediate', 'lecture', event)">講義モード</button>
+                <button class="mode-btn" onclick="switchMode('intermediate', 'practice', event)">実践モード</button>
+            </div>
+
+            <div id="intermediate-lecture" class="mode-content instruction-text active">
+                <div id="int-step-1" class="quiz-section active">
+                    <h3>役の基本とタンヤオ</h3>
+                    <p>麻雀でアガるには最低でも1つの役が必要です。最も作りやすいのが、1、9、字牌を一切使わない断么九です。</p>
+                    <p>2から8の数牌だけで手牌を構成すると成立します。とても使い勝手が良いので真っ先に覚えましょう。</p>
+                    <button class="next-btn" style="display:inline-block;" onclick="nextQuiz('int-step-1', 'int-step-2')">次へ</button>
+                </div>
+                <div id="int-step-2" class="quiz-section">
+                    <h3>役牌</h3>
+                    <p>特定の字牌を3枚集めるだけで役になります。白、發、中は集めるだけで役になりますが、東、南、西、北は状況によります。</p>
+                    <p>今の局の風や、自分の席の風と一致する牌を集めると役になります。</p>
+                    <button class="next-btn" style="display:inline-block;" onclick="nextQuiz('int-step-2', 'int-step-3')">次へ</button>
+                </div>
+                <div id="int-step-3" class="quiz-section">
+                    <h3>鳴き</h3>
+                    <p>他人が捨てた牌をもらって面子を作ることを鳴きと呼びます。スピードは上がりますが、作れる役が限られたり、他人に手牌を読まれやすくなるデメリットがあります。</p>
+                    <button class="next-btn" style="display:inline-block;" onclick="switchMode('intermediate', 'practice', {currentTarget: document.querySelectorAll('#intermediate .mode-btn')[1]})">実践モードへ</button>
+                </div>
+            </div>
+
+            <div id="intermediate-practice" class="mode-content instruction-text">
+                <div id="int-prac-q1" class="quiz-section active">
+                    <h3>第1問：タンヤオを作ろう</h3>
+                    <p>この手牌をタンヤオにするために、真っ先に捨てるべき牌はどれでしょう。</p>
+                    <div class="tile-showcase">
+                        <div class="tile pinzu" onclick="checkIntPracQ1(false)">2筒</div>
+                        <div class="tile pinzu" onclick="checkIntPracQ1(false)">3筒</div>
+                        <div class="tile pinzu" onclick="checkIntPracQ1(false)">4筒</div>
+                        <div style="width: 10px;"></div>
+                        <div class="tile souzu" onclick="checkIntPracQ1(false)">4索</div>
+                        <div class="tile souzu" onclick="checkIntPracQ1(false)">5索</div>
+                        <div class="tile souzu" onclick="checkIntPracQ1(false)">6索</div>
+                        <div style="width: 10px;"></div>
+                        <div class="tile jihai" onclick="checkIntPracQ1(true)">西</div>
+                    </div>
+                    <p id="int-prac-fb-1" class="feedback"></p>
+                    <button class="next-btn" id="int-prac-next-1" onclick="nextQuiz('int-prac-q1', 'int-prac-q2')">第2問へ</button>
+                </div>
+                <div id="int-prac-q2" class="quiz-section">
+                    <h3>第2問：どれが役牌？</h3>
+                    <p>現在は東1局で、あなたは南家です。次のうち、3枚集めると役になる牌はどれでしょう。</p>
+                    <div class="tile-showcase">
+                        <div class="tile jihai" onclick="checkIntPracQ2(true)">東</div>
+                        <div class="tile jihai" onclick="checkIntPracQ2(false)">西</div>
+                        <div class="tile jihai" onclick="checkIntPracQ2(false)">北</div>
+                    </div>
+                    <p id="int-prac-fb-2" class="feedback"></p>
+                    <button class="next-btn" id="int-prac-next-2" onclick="nextQuiz('int-prac-q2', 'int-prac-q3')">第3問へ</button>
+                </div>
+                <div id="int-prac-q3" class="quiz-section">
+                    <h3>第3問：鳴きの判断</h3>
+                    <p>あなたはタンヤオを狙っています。上家が1萬を捨てました。チーして面子を作りますか。</p>
+                    <div style="display: flex; gap: 15px; justify-content: center;">
+                        <button class="action-btn" onclick="checkIntPracQ3(false)">チーする</button>
+                        <button class="action-btn" onclick="checkIntPracQ3(true)">見送る</button>
+                    </div>
+                    <p id="int-prac-fb-3" class="feedback"></p>
+                    <button class="next-btn" id="int-prac-next-3" onclick="alert('中級編クリアです。上級編へ進みましょう。'); switchTab('advanced', {currentTarget: document.querySelectorAll('.tab-btn')[2]});">中級編クリア</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="advanced" class="tab-content">
+            <div class="mode-switch">
+                <button class="mode-btn active" onclick="switchMode('advanced', 'lecture', event)">講義モード</button>
+                <button class="mode-btn" onclick="switchMode('advanced', 'practice', event)">実践モード</button>
+            </div>
+
+            <div id="advanced-lecture" class="mode-content instruction-text active">
+                <div id="adv-step-1" class="quiz-section active">
+                    <h3>点数計算の仕組み</h3>
+                    <p>麻雀の点数は翻と符の組み合わせで決まります。役の難易度で翻が決まり、手牌の複雑さで符が決まります。</p>
+                    <p>ベースとなる基本符は20符です。そこにアガリ方や待ちの形による追加の符を足していきます。</p>
+                    <button class="next-btn" style="display:inline-block;" onclick="nextQuiz('adv-step-1', 'adv-step-2')">次へ</button>
+                </div>
+                <div id="adv-step-2" class="quiz-section">
+                    <h3>よく出る符のパターン</h3>
+                    <p>門前でロンアガリをした場合は必ず10符加算されます。ツモアガリの場合は2符加算されます。</p>
+                    <p>細かい符計算を毎回行うよりも、まずは実戦でよく出る30符と40符の点数を丸暗記するのが上達への近道です。</p>
+                    <button class="next-btn" style="display:inline-block;" onclick="switchMode('advanced', 'practice', {currentTarget: document.querySelectorAll('#advanced .mode-btn')[1]})">実践モードへ</button>
+                </div>
+            </div>
+
+            <div id="advanced-practice" class="mode-content instruction-text">
+                <div id="adv-prac-q1" class="quiz-section active">
+                    <h3>第1問：基本の点数</h3>
+                    <p>以下の牌姿でロンアガリしました。もらえる点数は何点でしょう。</p>
+                    <div class="game-status">東1局 南家 ｜ ドラ: <span class="manzu">2萬</span> ｜ <span style="color: #9b59b6;">リーチ</span></div>
+                    <div style="color: #f1c40f; margin-bottom: 10px;">成立役：リーチ、平和、ドラ1</div>
+                    <div class="tile-showcase">
+                        <div class="tile manzu">3萬</div><div class="tile manzu">4萬</div><div class="tile manzu">5萬</div>
+                        <div style="width: 5px;"></div>
+                        <div class="tile pinzu">5筒</div><div class="tile pinzu">6筒</div><div class="tile pinzu">7筒</div>
+                        <div style="width: 5px;"></div>
+                        <div class="tile souzu">2索</div><div class="tile souzu">3索</div><div class="tile souzu">4索</div>
+                        <div style="width: 5px;"></div>
+                        <div class="tile jihai">白</div><div class="tile jihai">白</div>
+                        <div style="width: 5px;"></div>
+                        <div class="tile manzu">7萬</div><div class="tile manzu">8萬</div>
+                        <div class="tile manzu ron-tile">9萬</div>
+                    </div>
+                    <p style="font-size: 14px; color: #bdc3c7;">ヒント：3翻 30符</p>
+                    <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                        <button class="action-btn" style="width: 120px;" onclick="checkAdvPracQ1(2000)">2000点</button>
+                        <button class="action-btn" style="width: 120px;" onclick="checkAdvPracQ1(3900)">3900点</button>
+                        <button class="action-btn" style="width: 120px;" onclick="checkAdvPracQ1(5200)">5200点</button>
+                    </div>
+                    <p id="adv-prac-fb-1" class="feedback"></p>
+                    <button class="next-btn" id="adv-prac-next-1" onclick="nextQuiz('adv-prac-q1', 'adv-prac-q2')">第2問へ</button>
+                </div>
+
+                <div id="adv-prac-q2" class="quiz-section">
+                    <h3>第2問：親の点数と切り上げ満貫</h3>
+                    <p>親で以下の手牌をアガりました。子の約1.5倍の点数がもらえます。何点でしょう。</p>
+                    <div class="game-status">東1局 東家 ｜ ドラ: <span class="manzu">6萬</span> ｜ <span style="color: #9b59b6;">リーチ</span></div>
+                    <div style="color: #f1c40f; margin-bottom: 10px;">成立役：リーチ、断么九、平和、ドラ1</div>
+                    <div class="tile-showcase">
+                        <div class="tile manzu">2萬</div><div class="tile manzu">3萬</div><div class="tile manzu">4萬</div>
+                        <div style="width: 5px;"></div>
+                        <div class="tile pinzu">5筒</div><div class="tile pinzu">6筒</div><div class="tile pinzu">7筒</div>
+                        <div style="width: 5px;"></div>
+                        <div class="tile souzu">3索</div><div class="tile souzu">4索</div><div class="tile souzu">5索</div>
+                        <div style="width: 5px;"></div>
+                        <div class="tile souzu">2索</div><div class="tile souzu">2索</div>
+                        <div style="width: 5px;"></div>
+                        <div class="tile manzu">6萬</div><div class="tile manzu">7萬</div>
+                        <div class="tile manzu ron-tile">8萬</div>
+                    </div>
+                    <p style="font-size: 14px; color: #bdc3c7;">ヒント：4翻 30符</p>
+                    <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                        <button class="action-btn" style="width: 120px;" onclick="checkAdvPracQ2(7700)">7700点</button>
+                        <button class="action-btn" style="width: 120px;" onclick="checkAdvPracQ2(8000)">8000点</button>
+                        <button class="action-btn" style="width: 120px;" onclick="checkAdvPracQ2(12000)">12000点</button>
+                    </div>
+                    <p id="adv-prac-fb-2" class="feedback"></p>
+                    <button class="next-btn" id="adv-prac-next-2" onclick="nextQuiz('adv-prac-q2', 'adv-prac-q3')">第3問へ</button>
+                </div>
+
+                <div id="adv-prac-q3" class="quiz-section">
+                    <h3>第3問：満貫</h3>
+                    <p>以下の牌姿でアガりました。点数計算の上限の一つである満貫になります。何点でしょう。</p>
+                    <div class="game-status">東1局 南家 ｜ ドラ: <span class="souzu">1索</span> ｜ <span style="color: #9b59b6;">リーチ</span></div>
+                    <div style="color: #f1c40f; margin-bottom: 10px;">成立役：リーチ、役牌、ドラ3</div>
+                    <div class="tile-showcase">
+                        <div class="tile souzu">1索</div><div class="tile souzu">1索</div><div class="tile souzu">1索</div>
+                        <div style="width: 5px;"></div>
+                        <div class="tile pinzu">5筒</div><div class="tile pinzu">6筒</div><div class="tile pinzu">7筒</div>
+                        <div style="width: 5px;"></div>
+                        <div class="tile manzu">3萬</div><div class="tile manzu">4萬</div><div class="tile manzu">5萬</div>
+                        <div style="width: 5px;"></div>
+                        <div class="tile jihai">白</div><div class="tile jihai">白</div>
+                        <div style="width: 5px;"></div>
+                        <div class="tile manzu">7萬</div><div class="tile manzu">8萬</div>
+                        <div class="tile manzu ron-tile">9萬</div>
+                    </div>
+                    <p style="font-size: 14px; color: #bdc3c7;">ヒント：5翻 40符</p>
+                    <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                        <button class="action-btn" style="width: 120px;" onclick="checkAdvPracQ3(8000)">8000点</button>
+                        <button class="action-btn" style="width: 120px;" onclick="checkAdvPracQ3(12000)">12000点</button>
+                        <button class="action-btn" style="width: 120px;" onclick="checkAdvPracQ3(16000)">16000点</button>
+                    </div>
+                    <p id="adv-prac-fb-3" class="feedback"></p>
+                    <button class="next-btn" id="adv-prac-next-3" onclick="alert('全カリキュラムクリアです。点数計算ドリルに挑戦しましょう。'); switchTab('drill', {currentTarget: document.querySelectorAll('.tab-btn')[3]});">ドリルへ</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="drill" class="tab-content">
+            <div class="mode-content instruction-text active">
+                <div class="question-selector">
+                    <span>問題を選択</span>
+                    <select id="jump-select"></select>
+                    <button class="action-btn" style="margin-top: 0;" onclick="jumpToSelected()">移動</button>
+                </div>
+
+                <div id="adv-prac-endless" class="quiz-section active">
+                    <h3 id="question-title">問題読込中</h3>
+                    <p>以下の牌姿でのアガリ点数を答えてください。</p>
+                    
+                    <div class="game-status" id="endless-condition"></div>
+                    
+                    <div style="margin-bottom: 10px; color: #f1c40f;" id="endless-yaku"></div>
+
+                    <div class="tile-showcase" id="endless-hand-display"></div>
+
+                    <p style="font-size: 14px; color: #bdc3c7;" id="endless-hint"></p>
+                    
+                    <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; margin-top: 20px;" id="endless-options"></div>
+                    
+                    <p id="adv-prac-fb-endless" class="feedback"></p>
+                    <button class="next-btn" id="adv-prac-next-endless" onclick="nextQuestion()">次の問題へ</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tabId, event) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
+            if (tabId !== 'drill') {
+                resetToLecture(tabId);
+            }
+        }
+
+        function switchMode(tabId, modeId, event) {
+            const parent = document.getElementById(tabId);
+            parent.querySelectorAll('.mode-content').forEach(el => el.classList.remove('active'));
+            parent.querySelectorAll('.mode-btn').forEach(el => el.classList.remove('active'));
+            const targetContent = parent.querySelector(`#${tabId}-${modeId}`);
+            if (targetContent) {
+                targetContent.classList.add('active');
+            }
+            event.currentTarget.classList.add('active');
+            
+            if (targetContent) {
+                const firstStep = targetContent.querySelector('.quiz-section');
+                if (firstStep) {
+                    targetContent.querySelectorAll('.quiz-section').forEach(el => el.classList.remove('active'));
+                    firstStep.classList.add('active');
+                }
+            }
+        }
+
+        function resetToLecture(tabId) {
+            const parent = document.getElementById(tabId);
+            const modeBtns = parent.querySelectorAll('.mode-btn');
+            if (modeBtns.length > 0) {
+                switchMode(tabId, 'lecture', {currentTarget: modeBtns[0]});
+            }
+        }
+
+        function nextStep(stepId) {
+            const currentTab = document.querySelector('.tab-content.active');
+            currentTab.querySelectorAll('.instruction-text').forEach(el => el.classList.remove('active'));
+            document.getElementById(stepId).classList.add('active');
+        }
+
+        function nextQuiz(currentId, nextId) {
+            document.getElementById(currentId).classList.remove('active');
+            document.getElementById(nextId).classList.add('active');
+        }
+
+        function toggleSelect(element) { element.classList.toggle('selected'); }
+
+        function checkQuiz1() {
+            const tiles = document.getElementById('quiz1-tiles').querySelectorAll('.tile');
+            let isCorrect = true; let selectedCount = 0;
+            tiles.forEach(tile => {
+                const isSelected = tile.classList.contains('selected');
+                const shouldSelect = tile.getAttribute('data-correct') === 'true';
+                if (isSelected) selectedCount++;
+                if (isSelected !== shouldSelect) isCorrect = false;
+            });
+            const fb = document.getElementById('quiz1-feedback');
+            if (selectedCount === 0) { fb.textContent = 'タップして選択してください。'; fb.className = 'feedback incorrect'; }
+            else if (isCorrect) { fb.textContent = '正解です。東と白が字牌です。'; fb.className = 'feedback correct'; document.getElementById('btn-next-1').style.display = 'inline-block'; }
+            else { fb.textContent = '不正解です。数字や絵が描かれているのは数牌です。'; fb.className = 'feedback incorrect'; }
+        }
+
+        function checkQuiz2(answer) {
+            const fb = document.getElementById('quiz2-feedback');
+            if (answer === 'shuntsu') { fb.textContent = '大正解です。数字が連なっているので順子です。'; fb.className = 'feedback correct'; document.getElementById('btn-next-2').style.display = 'inline-block'; }
+            else { fb.textContent = '残念です。同じ牌が3つ揃っているのが刻子です。'; fb.className = 'feedback incorrect'; }
+        }
+
+        function checkQuiz3(isCorrect) {
+            const fb = document.getElementById('quiz3-feedback');
+            if (isCorrect) { fb.textContent = 'お見事です。同じ牌の2枚組が雀頭です。'; fb.className = 'feedback correct'; document.getElementById('btn-next-3').style.display = 'inline-block'; }
+            else { fb.textContent = '違います。それは3枚組の面子です。'; fb.className = 'feedback incorrect'; }
+        }
+
+        function answerBegPracQ1(element) {
+            const emptySlot = document.getElementById("empty-slot-q1");
+            if (!emptySlot) return; 
+            const clone = element.cloneNode(true);
+            clone.removeAttribute('onclick'); 
+            emptySlot.parentNode.replaceChild(clone, emptySlot);
+            element.style.visibility = 'hidden';
+            const fb = document.getElementById('beg-prac-fb-1');
+            if (element.getAttribute('data-type') === 'correct') {
+                fb.textContent = '素晴らしいです。順子が完成しました。'; 
+                fb.className = 'feedback correct'; 
+                document.getElementById('beg-prac-next-1').style.display = 'inline-block';
+            } else {
+                fb.textContent = '惜しいです。順子は同じ種類の牌で連番にする必要があります。'; 
+                fb.className = 'feedback incorrect';
+            }
+        }
+
+        function resetBegPracQ1() {
+            const target = document.getElementById('target-q1');
+            const source = document.getElementById('source-q1');
+            const fb = document.getElementById('beg-prac-fb-1');
+            target.innerHTML = '<div class="tile manzu">1萬</div><div class="tile manzu">2萬</div><div class="tile empty-slot" id="empty-slot-q1">？</div>';
+            source.innerHTML = '<div class="tile pinzu" onclick="answerBegPracQ1(this)" data-type="wrong">3筒</div><div class="tile manzu" onclick="answerBegPracQ1(this)" data-type="correct">3萬</div><div class="tile jihai" onclick="answerBegPracQ1(this)" data-type="wrong">東</div>';
+            fb.textContent = '';
+            document.getElementById('beg-prac-next-1').style.display = 'none';
+        }
+
+        function answerBegPracQ2(element) {
+            const emptySlot = document.getElementById("empty-slot-q2");
+            if (!emptySlot) return; 
+            const clone = element.cloneNode(true);
+            clone.removeAttribute('onclick'); 
+            emptySlot.parentNode.replaceChild(clone, emptySlot);
+            element.style.visibility = 'hidden';
+            const fb = document.getElementById('beg-prac-fb-2');
+            if (element.getAttribute('data-type') === 'correct') {
+                fb.textContent = '正解です。同じ牌を3枚揃えるのが刻子です。'; 
+                fb.className = 'feedback correct'; 
+                document.getElementById('beg-prac-next-2').style.display = 'inline-block';
+            } else {
+                fb.textContent = '違います。刻子は全く同じ牌を3枚集める必要があります。'; 
+                fb.className = 'feedback incorrect';
+            }
+        }
+
+        function resetBegPracQ2() {
+            const target = document.getElementById('target-q2');
+            const source = document.getElementById('source-q2');
+            const fb = document.getElementById('beg-prac-fb-2');
+            target.innerHTML = '<div class="tile souzu">8索</div><div class="tile souzu">8索</div><div class="tile empty-slot" id="empty-slot-q2">？</div>';
+            source.innerHTML = '<div class="tile souzu" onclick="answerBegPracQ2(this)" data-type="wrong">7索</div><div class="tile souzu" onclick="answerBegPracQ2(this)" data-type="correct">8索</div><div class="tile souzu" onclick="answerBegPracQ2(this)" data-type="wrong">9索</div>';
+            fb.textContent = '';
+            document.getElementById('beg-prac-next-2').style.display = 'none';
+        }
+
+        function checkBegPracQ3(isCorrect) {
+            const fb = document.getElementById('beg-prac-fb-3');
+            if (isCorrect) { fb.textContent = '正解です。2枚組の牌が雀頭になります。'; fb.className = 'feedback correct'; document.getElementById('beg-prac-next-3').style.display = 'inline-block'; }
+            else { fb.textContent = '違います。雀頭は同じ牌の2枚組です。'; fb.className = 'feedback incorrect'; }
+        }
+
+        function checkBegPracQ4() {
+            const tiles = document.getElementById('beg-prac-q4-tiles').querySelectorAll('.tile');
+            let isCorrect = true; let selectedCount = 0;
+            tiles.forEach(tile => {
+                const isSelected = tile.classList.contains('selected');
+                const shouldSelect = tile.getAttribute('data-correct') === 'true';
+                if (isSelected) selectedCount++;
+                if (isSelected !== shouldSelect) isCorrect = false;
+            });
+            const fb = document.getElementById('beg-prac-fb-4');
+            if (selectedCount === 0) { fb.textContent = 'タップして選択してください。'; fb.className = 'feedback incorrect'; }
+            else if (isCorrect) { fb.textContent = '正解です。両端が当たり牌です。'; fb.className = 'feedback correct'; document.getElementById('beg-prac-next-4').style.display = 'inline-block'; }
+            else { fb.textContent = '不正解です。両面待ちは連番の両端がアガリ牌になります。'; fb.className = 'feedback incorrect'; }
+        }
+
+        function checkBegPracQ5(isCorrect) {
+            const fb = document.getElementById('beg-prac-fb-5');
+            if (isCorrect) { fb.textContent = 'アガリです。順子が完成しました。'; fb.className = 'feedback correct'; document.getElementById('beg-prac-next-5').style.display = 'inline-block'; }
+            else { fb.textContent = '違います。手牌に足りない形をよく探してみましょう。'; fb.className = 'feedback incorrect'; }
+        }
+
+        function checkIntPracQ1(isCorrect) {
+            const fb = document.getElementById('int-prac-fb-1');
+            if (isCorrect) { fb.textContent = '正解です。字牌である西を捨てれば、タンヤオが完成します。'; fb.className = 'feedback correct'; document.getElementById('int-prac-next-1').style.display = 'inline-block'; }
+            else { fb.textContent = '不正解です。タンヤオは1、9、字牌を使ってはいけません。'; fb.className = 'feedback incorrect'; }
+        }
+
+        function checkIntPracQ2(isCorrect) {
+            const fb = document.getElementById('int-prac-fb-2');
+            if (isCorrect) { fb.textContent = '正解です。今は東1局なので、東は場風の役牌になります。'; fb.className = 'feedback correct'; document.getElementById('int-prac-next-2').style.display = 'inline-block'; }
+            else { fb.textContent = '不正解です。役牌になるのは場風か自風、または白發中のみです。'; fb.className = 'feedback incorrect'; }
+        }
+
+        function checkIntPracQ3(isCorrect) {
+            const fb = document.getElementById('int-prac-fb-3');
+            if (isCorrect) { fb.textContent = '素晴らしい判断です。1萬をチーするとタンヤオの役が消えてしまいます。'; fb.className = 'feedback correct'; document.getElementById('int-prac-next-3').style.display = 'inline-block'; }
+            else { fb.textContent = '要注意です。1萬を使ってしまうとタンヤオが成立しなくなってしまいます。'; fb.className = 'feedback incorrect'; }
+        }
+
+        function checkAdvPracQ1(points) {
+            const fb = document.getElementById('adv-prac-fb-1');
+            if (points === 3900) { fb.textContent = '正解です。子の3翻30符は3900点です。'; fb.className = 'feedback correct'; document.getElementById('adv-prac-next-1').style.display = 'inline-block'; }
+            else { fb.textContent = '違います。ヒントの翻数と符数を参考に考えてみましょう。'; fb.className = 'feedback incorrect'; }
+        }
+
+        function checkAdvPracQ2(points) {
+            const fb = document.getElementById('adv-prac-fb-2');
+            if (points === 12000) { 
+                fb.innerHTML = '正解です。<br>厳密な計算では11600点ですが、このアプリでは切り上げ満貫を採用しているため、4翻30符は満貫扱いとなり 12000点 となります。'; 
+                fb.className = 'feedback correct'; 
+                document.getElementById('adv-prac-next-2').style.display = 'inline-block'; 
+            } else if (points === 8000) { 
+                fb.innerHTML = '違います。8000点は子の満貫です。今回は親のアガリです。'; 
+                fb.className = 'feedback incorrect'; 
+            } else { 
+                fb.textContent = '惜しいです。厳密計算では7700ですが、切り上げ満貫を採用しています。満貫の点数を選んでください。'; 
+                fb.className = 'feedback incorrect'; 
+            }
+        }
+
+        function checkAdvPracQ3(points) {
+            const fb = document.getElementById('adv-prac-fb-3');
+            if (points === 8000) { fb.textContent = '正解です。子の満貫は8000点になります。'; fb.className = 'feedback correct'; document.getElementById('adv-prac-next-3').style.display = 'inline-block'; }
+            else { fb.textContent = '違います。12000点は親の満貫の点数です。'; fb.className = 'feedback incorrect'; }
+        }
+
+        const practiceDB = [
+            { id: 1, level: "初級", han: 1, fu: 30, isTsumo: false, isOya: false, yaku: "平和", tiles: [{s: "manzu", n: "2萬"}, {s: "manzu", n: "3萬"}, {s: "manzu", n: "4萬"}, {s: "pinzu", n: "5筒"}, {s: "pinzu", n: "6筒"}, {s: "pinzu", n: "7筒"}, {s: "souzu", n: "2索"}, {s: "souzu", n: "3索"}, {s: "souzu", n: "4索"}, {s: "jihai", n: "西"}, {s: "jihai", n: "西"}, {s: "manzu", n: "7萬"}, {s: "manzu", n: "8萬"}], ron: {s: "manzu", n: "9萬"}, dora: {s: "pinzu", n: "1筒"}, hint: "子・ロンアガリ・1翻30符" },
+            { id: 2, level: "初級", han: 2, fu: 30, isTsumo: false, isOya: false, yaku: "リーチ、平和", tiles: [{s: "manzu", n: "2萬"}, {s: "manzu", n: "3萬"}, {s: "manzu", n: "4萬"}, {s: "pinzu", n: "5筒"}, {s: "pinzu", n: "6筒"}, {s: "pinzu", n: "7筒"}, {s: "souzu", n: "2索"}, {s: "souzu", n: "3索"}, {s: "souzu", n: "4索"}, {s: "jihai", n: "北"}, {s: "jihai", n: "北"}, {s: "manzu", n: "7萬"}, {s: "manzu", n: "8萬"}], ron: {s: "manzu", n: "9萬"}, dora: {s: "pinzu", n: "1筒"}, hint: "子・ロンアガリ・2翻30符" },
+            { id: 3, level: "初級", han: 3, fu: 30, isTsumo: false, isOya: true, yaku: "リーチ、平和、ドラ1", tiles: [{s: "manzu", n: "2萬"}, {s: "manzu", n: "3萬"}, {s: "manzu", n: "4萬"}, {s: "pinzu", n: "5筒"}, {s: "pinzu", n: "6筒"}, {s: "pinzu", n: "7筒"}, {s: "souzu", n: "2索"}, {s: "souzu", n: "3索"}, {s: "souzu", n: "4索"}, {s: "jihai", n: "西"}, {s: "jihai", n: "西"}, {s: "manzu", n: "7萬"}, {s: "manzu", n: "8萬"}], ron: {s: "manzu", n: "9萬"}, dora: {s: "manzu", n: "2萬"}, hint: "親・ロンアガリ・3翻30符" },
+            { id: 4, level: "初級", han: 1, fu: 40, isTsumo: false, isOya: false, yaku: "断么九", tiles: [{s: "manzu", n: "2萬"}, {s: "manzu", n: "3萬"}, {s: "manzu", n: "4萬"}, {s: "pinzu", n: "5筒"}, {s: "pinzu", n: "6筒"}, {s: "pinzu", n: "7筒"}, {s: "souzu", n: "2索"}, {s: "souzu", n: "2索"}, {s: "souzu", n: "2索"}, {s: "pinzu", n: "8筒"}, {s: "pinzu", n: "8筒"}, {s: "manzu", n: "7萬"}, {s: "manzu", n: "8萬"}], ron: {s: "manzu", n: "6萬"}, dora: {s: "jihai", n: "西"}, hint: "子・ロンアガリ・1翻40符" },
+            { id: 5, level: "初級", han: 2, fu: 40, isTsumo: false, isOya: true, yaku: "役牌:白、ドラ1", tiles: [{s: "jihai", n: "白"}, {s: "jihai", n: "白"}, {s: "jihai", n: "白"}, {s: "pinzu", n: "5筒"}, {s: "pinzu", n: "6筒"}, {s: "pinzu", n: "7筒"}, {s: "souzu", n: "2索"}, {s: "souzu", n: "3索"}, {s: "souzu", n: "4索"}, {s: "souzu", n: "8索"}, {s: "souzu", n: "8索"}, {s: "manzu", n: "6萬"}, {s: "manzu", n: "7萬"}], ron: {s: "manzu", n: "5萬"}, dora: {s: "jihai", n: "白"}, hint: "親・ロンアガリ・2翻40符" },
+            { id: 6, level: "初級", han: 3, fu: 40, isTsumo: false, isOya: false, yaku: "リーチ、断么九、ドラ1", tiles: [{s: "manzu", n: "2萬"}, {s: "manzu", n: "2萬"}, {s: "manzu", n: "2萬"}, {s: "pinzu", n: "5筒"}, {s: "pinzu", n: "6筒"}, {s: "pinzu", n: "7筒"}, {s: "souzu", n: "2索"}, {s: "souzu", n: "3索"}, {s: "souzu", n: "4索"}, {s: "souzu", n: "8索"}, {s: "souzu", n: "8索"}, {s: "manzu", n: "6萬"}, {s: "manzu", n: "7萬"}], ron: {s: "manzu", n: "5萬"}, dora: {s: "manzu", n: "2萬"}, hint: "子・ロンアガリ・3翻40符" },
+            { id: 7, level: "初級", han: 1, fu: 30, isTsumo: true, isOya: false, yaku: "門前清自摸和", tiles: [{s: "manzu", n: "2萬"}, {s: "manzu", n: "3萬"}, {s: "manzu", n: "4萬"}, {s: "pinzu", n: "5筒"}, {s: "pinzu", n: "6筒"}, {s: "pinzu", n: "7筒"}, {s: "souzu", n: "2索"}, {s: "souzu", n: "3索"}, {s: "souzu", n: "4索"}, {s: "jihai", n: "西"}, {s: "jihai", n: "西"}, {s: "manzu", n: "1萬"}, {s: "manzu", n: "2萬"}], ron: {s: "manzu", n: "3萬"}, dora: {s: "pinzu", n: "1筒"}, hint: "子・ツモアガリ・1翻30符" },
+            { id: 8, level: "初級", han: 2, fu: 30, isTsumo: true, isOya: true, yaku: "リーチ、ツモ", tiles: [{s: "manzu", n: "2萬"}, {s: "manzu", n: "3萬"}, {s: "manzu", n: "4萬"}, {s: "pinzu", n: "5筒"}, {s: "pinzu", n: "6筒"}, {s: "pinzu", n: "7筒"}, {s: "souzu", n: "2索"}, {s: "souzu", n: "3索"}, {s: "souzu", n: "4索"}, {s: "jihai", n: "北"}, {s: "jihai", n: "北"}, {s: "manzu", n: "1萬"}, {s: "manzu", n: "2萬"}], ron: {s: "manzu", n: "3萬"}, dora: {s: "pinzu", n: "1筒"}, hint: "親・ツモアガリ・2翻30符" },
+            { id: 9, level: "初級", han: 1, fu: 40, isTsumo: true, isOya: false, yaku: "門前清自摸和", tiles: [{s: "manzu", n: "2萬"}, {s: "manzu", n: "2萬"}, {s: "manzu", n: "2萬"}, {s: "pinzu", n: "5筒"}, {s: "pinzu", n: "6筒"}, {s: "pinzu", n: "7筒"}, {s: "souzu", n: "2索"}, {s: "souzu", n: "3索"}, {s: "souzu", n: "4索"}, {s: "souzu", n: "8索"}, {s: "souzu", n: "8索"}, {s: "manzu", n: "6萬"}, {s: "manzu", n: "7萬"}], ron: {s: "manzu", n: "5萬"}, dora: {s: "pinzu", n: "1筒"}, hint: "子・ツモアガリ・1翻40符" },
+            { id: 10, level: "初級", han: 4, fu: 40, isTsumo: false, isOya: false, yaku: "リーチ、断么九、ドラ2", tiles: [{s: "manzu", n: "2萬"}, {s: "manzu", n: "2萬"}, {s: "manzu", n: "2萬"}, {s: "pinzu", n: "5筒"}, {s: "pinzu", n: "6筒"}, {s: "pinzu", n: "7筒"}, {s: "souzu", n: "2索"}, {s: "souzu", n: "3索"}, {s: "souzu", n: "4索"}, {s: "souzu", n: "8索"}, {s: "souzu", n: "8索"}, {s: "manzu", n: "6萬"}, {s: "manzu", n: "7萬"}], ron: {s: "manzu", n: "5萬"}, dora: {s: "manzu", n: "2萬"}, hint: "子・ロンアガリ・4翻40符（満貫）" },
+
+            { id: 11, level: "中級", han: 2, fu: 20, isTsumo: true, isOya: false, yaku: "ツモ、平和", tiles: [{s: "manzu", n: "2萬"}, {s: "manzu", n: "3萬"}, {s: "manzu", n: "4萬"}, {s: "pinzu", n: "5筒"}, {s: "pinzu", n: "6筒"}, {s: "pinzu", n: "7筒"}, {s: "souzu", n: "2索"}, {s: "souzu", n: "3索"}, {s: "souzu", n: "4索"}, {s: "jihai", n: "西"}, {s: "jihai", n: "西"}, {s: "manzu", n: "7萬"}, {s: "manzu", n: "8萬"}], ron: {s: "manzu", n: "9萬"}, dora: {s: "pinzu", n: "1筒"}, hint: "子・ツモアガリ・2翻20符（平和ツモの例外）" },
+            { id: 12, level: "中級", han: 3, fu: 20, isTsumo: true, isOya: true, yaku: "リーチ、ツモ、平和", tiles: [{s: "manzu", n: "2萬"}, {s: "manzu", n: "3萬"}, {s: "manzu", n: "4萬"}, {s: "pinzu", n: "5筒"}, {s: "pinzu", n: "6筒"}, {s: "pinzu", n: "7筒"}, {s: "souzu", n: "2索"}, {s: "souzu", n: "3索"}, {s: "souzu", n: "4索"}, {s: "jihai", n: "北"}, {s: "jihai", n: "北"}, {s: "manzu", n: "7萬"}, {s: "manzu", n: "8萬"}], ron: {s: "manzu", n: "9萬"}, dora: {s: "pinzu", n: "1筒"}, hint: "親・ツモアガリ・3翻20符（平和ツモの例外）" },
+            { id: 13, level: "中級", han: 2, fu: 25, isTsumo: false, isOya: false, yaku: "七対子", tiles: [{s: "manzu", n: "1萬"}, {s: "manzu", n: "1萬"}, {s: "manzu", n: "3萬"}, {s: "manzu", n: "3萬"}, {s: "pinzu", n: "5筒"}, {s: "pinzu", n: "5筒"}, {s: "pinzu", n: "7筒"}, {s: "pinzu", n: "7筒"}, {s: "souzu", n: "9索"}, {s: "souzu", n: "9索"}, {s: "jihai", n: "東"}, {s: "jihai", n: "東"}, {s: "jihai", n: "西"}], ron: {s: "jihai", n: "西"}, dora: {s: "souzu", n: "1索"}, hint: "子・ロンアガリ・2翻25符（七対子は25符固定）" },
+            { id: 14, level: "中級", han: 3, fu: 25, isTsumo: false, isOya: true, yaku: "七対子、ドラ1", tiles: [{s: "manzu", n: "1萬"}, {s: "manzu", n: "1萬"}, {s: "manzu", n: "3萬"}, {s: "manzu", n: "3萬"}, {s: "pinzu", n: "5筒"}, {s: "pinzu", n: "5筒"}, {s: "pinzu", n: "7筒"}, {s: "pinzu", n: "7筒"}, {s: "souzu", n: "9索"}, {s: "souzu", n: "9索"}, {s: "jihai", n: "東"}, {s: "jihai", n: "東"}, {s: "jihai", n: "西"}], ron: {s: "jihai", n: "西"}, dora: {s: "jihai", n: "東"}, hint: "親・ロンアガリ・3翻25符" },
+            { id: 15, level: "中級", han: 3, fu: 25, isTsumo: true, isOya: false, yaku: "ツモ、七対子", tiles: [{s: "manzu", n: "1萬"}, {s: "manzu", n: "1萬"}, {s: "manzu", n: "3萬"}, {s: "manzu", n: "3萬"}, {s: "pinzu", n: "5筒"}, {s: "pinzu", n: "5筒"}, {s: "pinzu", n: "7筒"}, {s: "pinzu", n: "7筒"}, {s: "souzu", n: "9索"}, {s: "souzu", n: "9索"}, {s: "jihai", n: "東"}, {s: "jihai", n: "東"}, {s: "jihai", n: "西"}], ron: {s: "jihai", n: "西"}, dora: {s: "souzu", n: "1索"}, hint: "子・ツモアガリ・3翻25符" },
+            { id: 16, level: "中級", han: 1, fu: 50, isTsumo: false, isOya: false, yaku: "役牌:白", tiles: [{s: "jihai", n: "白"}, {s: "jihai", n: "白"}, {s: "jihai", n: "白"}, {s: "pinzu", n: "5筒"}, {s: "pinzu", n: "5筒"}, {s: "pinzu", n: "5筒"}, {s: "souzu", n: "2索"}, {s: "souzu", n: "3索"}, {s: "souzu", n: "4索"}, {s: "souzu", n: "8索"}, {s: "souzu", n: "8索"}, {s: "manzu", n: "6萬"}, {s: "manzu", n: "7萬"}], ron: {s: "manzu", n: "5萬"}, dora: {s: "pinzu", n: "1筒"}, hint: "子・ロンアガリ・1翻50符" },
+            { id: 17, level: "中級", han: 2, fu: 50, isTsumo: false, isOya: true, yaku: "役牌:白、ドラ1", tiles: [{s: "jihai", n: "白"}, {s: "jihai", n: "白"}, {s: "jihai", n: "白"}, {s: "pinzu", n: "9筒"}, {s: "pinzu", n: "9筒"}, {s: "pinzu", n: "9筒"}, {s: "souzu", n: "2索"}, {s: "souzu", n: "3索"}, {s: "souzu", n: "4索"}, {s: "souzu", n: "8索"}, {s: "souzu", n: "8索"}, {s: "manzu", n: "6萬"}, {s: "manzu", n: "7萬"}], ron: {s: "manzu", n: "5萬"}, dora: {s: "jihai", n: "白"}, hint: "親・ロンアガリ・2翻50符" },
+            { id: 18, level: "中級", han: 2, fu: 50, isTsumo: true, isOya: false, yaku: "ツモ、役牌:東", tiles: [{s: "jihai", n: "東"}, {s: "jihai", n: "東"}, {s: "jihai", n: "東"}, {s: "pinzu", n: "9筒"}, {s: "pinzu", n: "9筒"}, {s: "pinzu", n: "9筒"}, {s: "souzu", n: "2索"}, {s: "souzu", n: "3索"}, {s: "souzu", n: "4索"}, {s: "souzu", n: "8索"}, {s: "souzu", n: "8索"}, {s: "manzu", n: "6萬"}, {s: "manzu", n: "7萬"}], ron: {s: "manzu", n: "5萬"}, dora: {s: "pinzu", n: "1筒"}, hint: "子・ツモアガリ・2翻50符" },
+            { id: 19, level: "中級", han: 3, fu: 50, isTsumo: true, isOya: true, yaku: "ツモ、役牌:中、ドラ1", tiles: [{s: "jihai", n: "中"}, {s: "jihai", n: "中"}, {s: "jihai", n: "中"}, {s: "pinzu", n: "1筒"}, {s: "pinzu", n: "1筒"}, {s: "pinzu", n: "1筒"}, {s: "souzu", n: "2索"}, {s: "souzu", n: "3索"}, {s: "souzu", n: "4索"}, {s: "souzu", n: "8索"}, {s: "souzu", n: "8索"}, {s: "manzu", n: "6萬"}, {s: "manzu", n: "7萬"}], ron: {s: "manzu", n: "5萬"}, dora: {s: "jihai", n: "中"}, hint: "親・ツモアガリ・3翻50符" },
+            { id: 20, level: "中級", han: 3, fu: 40, isTsumo: false, isOya: false, yaku: "役牌:発、ドラ2", tiles: [{s: "jihai", n: "發"}, {s: "jihai", n: "發"}, {s: "jihai", n: "發"}, {s: "pinzu", n: "5筒"}, {s: "pinzu", n: "6筒"}, {s: "pinzu", n: "7筒"}, {s: "souzu", n: "2索"}, {s: "souzu", n: "3索"}, {s: "souzu", n: "4索"}, {s: "souzu", n: "8索"}, {s: "souzu", n: "8索"}, {s: "manzu", n: "6萬"}, {s: "manzu", n: "7萬"}], ron: {s: "manzu", n: "5萬"}, dora: {s: "jihai", n: "發"}, hint: "子・ロンアガリ・3翻40符" },
+
+            { id: 21, level: "上級", han: 1, fu: 60, isTsumo: false, isOya: false, yaku: "役牌:中", tiles: [{s: "jihai", n: "中"}, {s: "jihai", n: "中"}, {s: "jihai", n: "中"}, {s: "manzu", n: "1萬"}, {s: "manzu", n: "1萬"}, {s: "manzu", n: "1萬"}, {s: "souzu", n: "2索"}, {s: "souzu", n: "3索"}, {s: "souzu", n: "4索"}, {s: "jihai", n: "東"}, {s: "jihai", n: "東"}, {s: "pinzu", n: "4筒"}, {s: "pinzu", n: "6筒"}], ron: {s: "pinzu", n: "5筒"}, dora: {s: "pinzu", n: "1筒"}, hint: "子・ロンアガリ・1翻60符" },
+            { id: 22, level: "上級", han: 2, fu: 60, isTsumo: false, isOya: true, yaku: "役牌:中、ドラ1", tiles: [{s: "jihai", n: "中"}, {s: "jihai", n: "中"}, {s: "jihai", n: "中"}, {s: "manzu", n: "1萬"}, {s: "manzu", n: "1萬"}, {s: "manzu", n: "1萬"}, {s: "souzu", n: "2索"}, {s: "souzu", n: "3索"}, {s: "souzu", n: "4索"}, {s: "jihai", n: "東"}, {s: "jihai", n: "東"}, {s: "pinzu", n: "4筒"}, {s: "pinzu", n: "6筒"}], ron: {s: "pinzu", n: "5筒"}, dora: {s: "jihai", n: "中"}, hint: "親・ロンアガリ・2翻60符" },
+            { id: 23, level: "上級", han: 3, fu: 60, isTsumo: true, isOya: false, yaku: "ツモ、三暗刻", tiles: [{s: "manzu", n: "1萬"}, {s: "manzu", n: "1萬"}, {s: "manzu", n: "1萬"}, {s: "pinzu", n: "9筒"}, {s: "pinzu", n: "9筒"}, {s: "pinzu", n: "9筒"}, {s: "souzu", n: "1索"}, {s: "souzu", n: "1索"}, {s: "souzu", n: "1索"}, {s: "jihai", n: "東"}, {s: "jihai", n: "東"}, {s: "manzu", n: "8萬"}, {s: "manzu", n: "9萬"}], ron: {s: "manzu", n: "7萬"}, dora: {s: "pinzu", n: "1筒"}, hint: "子・ツモアガリ・3翻60符" },
+            { id: 24, level: "上級", han: 2, fu: 70, isTsumo: false, isOya: false, yaku: "三暗刻", tiles: [{s: "manzu", n: "1萬"}, {s: "manzu", n: "1萬"}, {s: "manzu", n: "1萬"}, {s: "pinzu", n: "1筒"}, {s: "pinzu", n: "1筒"}, {s: "pinzu", n: "1筒"}, {s: "souzu", n: "1索"}, {s: "souzu", n: "1索"}, {s: "souzu", n: "1索"}, {s: "jihai", n: "東"}, {s: "jihai", n: "東"}, {s: "manzu", n: "4萬"}, {s: "manzu", n: "6萬"}], ron: {s: "manzu", n: "5萬"}, dora: {s: "pinzu", n: "2筒"}, hint: "子・ロンアガリ・2翻70符" },
+            { id: 25, level: "上級", han: 3, fu: 70, isTsumo: false, isOya: true, yaku: "三暗刻、ドラ1", tiles: [{s: "manzu", n: "1萬"}, {s: "manzu", n: "1萬"}, {s: "manzu", n: "1萬"}, {s: "pinzu", n: "1筒"}, {s: "pinzu", n: "1筒"}, {s: "pinzu", n: "1筒"}, {s: "souzu", n: "1索"}, {s: "souzu", n: "1索"}, {s: "souzu", n: "1索"}, {s: "jihai", n: "東"}, {s: "jihai", n: "東"}, {s: "manzu", n: "4萬"}, {s: "manzu", n: "6萬"}], ron: {s: "manzu", n: "5萬"}, dora: {s: "jihai", n: "東"}, hint: "親・ロンアガリ・3翻70符（満貫）" },
+            { id: 26, level: "上級", han: 1, fu: 80, isTsumo: false, isOya: false, yaku: "役牌:発", tiles: [{s: "jihai", n: "發"}, {s: "jihai", n: "發"}, {s: "jihai", n: "發"}, {s: "pinzu", n: "1筒"}, {s: "pinzu", n: "1筒"}, {s: "pinzu", n: "1筒"}, {s: "souzu", n: "1索"}, {s: "souzu", n: "1索"}, {s: "souzu", n: "1索"}, {s: "jihai", n: "東"}, {s: "jihai", n: "東"}, {s: "manzu", n: "4萬"}, {s: "manzu", n: "6萬"}], ron: {s: "manzu", n: "5萬"}, dora: {s: "pinzu", n: "2筒"}, hint: "子・ロンアガリ・1翻80符" },
+            { id: 27, level: "上級", han: 4, fu: 25, isTsumo: true, isOya: true, yaku: "ツモ、七対子、ドラ1", tiles: [{s: "manzu", n: "1萬"}, {s: "manzu", n: "1萬"}, {s: "manzu", n: "3萬"}, {s: "manzu", n: "3萬"}, {s: "pinzu", n: "5筒"}, {s: "pinzu", n: "5筒"}, {s: "pinzu", n: "7筒"}, {s: "pinzu", n: "7筒"}, {s: "souzu", n: "9索"}, {s: "souzu", n: "9索"}, {s: "jihai", n: "東"}, {s: "jihai", n: "東"}, {s: "jihai", n: "西"}], ron: {s: "jihai", n: "西"}, dora: {s: "jihai", n: "東"}, hint: "親・ツモアガリ・4翻25符" },
+            { id: 28, level: "上級", han: 3, fu: 60, isTsumo: false, isOya: true, yaku: "三暗刻、ドラ1", tiles: [{s: "manzu", n: "1萬"}, {s: "manzu", n: "1萬"}, {s: "manzu", n: "1萬"}, {s: "pinzu", n: "9筒"}, {s: "pinzu", n: "9筒"}, {s: "pinzu", n: "9筒"}, {s: "souzu", n: "1索"}, {s: "souzu", n: "1索"}, {s: "souzu", n: "1索"}, {s: "jihai", n: "東"}, {s: "jihai", n: "東"}, {s: "manzu", n: "4萬"}, {s: "manzu", n: "6萬"}], ron: {s: "manzu", n: "5萬"}, dora: {s: "jihai", n: "東"}, hint: "親・ロンアガリ・3翻60符" },
+            { id: 29, level: "上級", han: 4, fu: 30, isTsumo: true, isOya: false, yaku: "リーチ、ツモ、平和、ドラ1", tiles: [{s: "manzu", n: "2萬"}, {s: "manzu", n: "3萬"}, {s: "manzu", n: "4萬"}, {s: "pinzu", n: "5筒"}, {s: "pinzu", n: "6筒"}, {s: "pinzu", n: "7筒"}, {s: "souzu", n: "2索"}, {s: "souzu", n: "3索"}, {s: "souzu", n: "4索"}, {s: "jihai", n: "北"}, {s: "jihai", n: "北"}, {s: "manzu", n: "7萬"}, {s: "manzu", n: "8萬"}], ron: {s: "manzu", n: "9萬"}, dora: {s: "manzu", n: "2萬"}, hint: "子・ツモアガリ・4翻30符（満貫）" },
+            { id: 30, level: "上級", han: 3, fu: 70, isTsumo: false, isOya: false, yaku: "三暗刻、ドラ1", tiles: [{s: "manzu", n: "1萬"}, {s: "manzu", n: "1萬"}, {s: "manzu", n: "1萬"}, {s: "pinzu", n: "1筒"}, {s: "pinzu", n: "1筒"}, {s: "pinzu", n: "1筒"}, {s: "souzu", n: "1索"}, {s: "souzu", n: "1索"}, {s: "souzu", n: "1索"}, {s: "jihai", n: "東"}, {s: "jihai", n: "東"}, {s: "manzu", n: "4萬"}, {s: "manzu", n: "6萬"}], ron: {s: "manzu", n: "5萬"}, dora: {s: "jihai", n: "東"}, hint: "子・ロンアガリ・3翻70符（満貫）" }
+        ];
+
+        let currentIndex = 0;
+        let currentEndlessAnswerStr = "";
+
+        function calcMahjongScoreStr(han, fu, isOya, isTsumo) {
+            let base = fu * Math.pow(2, han + 2);
+            let isMangan = (han >= 5 || base >= 1920);
+
+            if (isMangan) {
+                if (isTsumo) {
+                    return isOya ? "4000オール" : "2000・4000";
+                } else {
+                    return isOya ? "12000" : "8000";
+                }
+            }
+
+            if (isTsumo) {
+                if (isOya) {
+                    let all = Math.ceil((base * 2) / 100) * 100;
+                    return `${all}オール`;
+                } else {
+                    let ko = Math.ceil(base / 100) * 100;
+                    let oya = Math.ceil((base * 2) / 100) * 100;
+                    return `${ko}・${oya}`;
+                }
+            } else {
+                let score = isOya ? base * 6 : base * 4;
+                return `${Math.ceil(score / 100) * 100}`;
+            }
+        }
+
+        function createTileHtml(tileObj, isRon = false) {
+            let classes = `tile ${tileObj.s}`;
+            if (isRon) classes += " ron-tile";
+            return `<div class="${classes}">${tileObj.n}</div>`;
+        }
+
+        function initSelector() {
+            const select = document.getElementById('jump-select');
+            select.innerHTML = '';
+            practiceDB.forEach((q, idx) => {
+                const opt = document.createElement('option');
+                opt.value = idx;
+                opt.textContent = `第${q.id}問 (${q.level})`;
+                select.appendChild(opt);
+            });
+        }
+
+        function jumpToSelected() {
+            const select = document.getElementById('jump-select');
+            currentIndex = parseInt(select.value);
+            loadQuestion(currentIndex);
+        }
+
+        function nextQuestion() {
+            currentIndex++;
+            if (currentIndex >= practiceDB.length) {
+                currentIndex = 0;
+            }
+            document.getElementById('jump-select').value = currentIndex;
+            loadQuestion(currentIndex);
+        }
+
+        function loadQuestion(index) {
+            document.getElementById('adv-prac-fb-endless').textContent = '';
+            document.getElementById('adv-prac-next-endless').style.display = 'none';
+
+            const problem = practiceDB[index];
+            const roleStr = problem.isOya ? "東家 (親)" : "南家 (子)";
+            const agariType = problem.isTsumo ? "ツモアガリ" : "ロンアガリ";
+            const agariColor = problem.isTsumo ? "#2ecc71" : "#e74c3c";
+            const riichiBadge = problem.yaku.includes('リーチ') ? ' ｜ <span style="color: #f1c40f;">リーチ</span>' : '';
+            
+            document.getElementById('question-title').textContent = `第${problem.id}問 (${problem.level})`;
+
+            const conditionHtml = `東1局 ${roleStr} ｜ ドラ: <span class="${problem.dora.s}">${problem.dora.n}</span> ｜ <span style="color: ${agariColor};">${agariType}</span>${riichiBadge}`;
+            document.getElementById('endless-condition').innerHTML = conditionHtml;
+            
+            document.getElementById('endless-yaku').textContent = `成立役：${problem.yaku}`;
+            document.getElementById('endless-hint').textContent = `(ヒント：${problem.han}翻 ${problem.fu}符)`;
+            
+            document.getElementById('endless-yaku').style.display = 'none';
+            document.getElementById('endless-hint').style.display = 'none';
+
+            let handHtml = "";
+            problem.tiles.forEach((t, i) => {
+                handHtml += createTileHtml(t);
+                if (i % 3 === 2 && i < 11 && problem.fu !== 25) { 
+                    handHtml += `<div style="width: 5px;"></div>`;
+                }
+            });
+            handHtml += createTileHtml(problem.ron, true);
+            document.getElementById('endless-hand-display').innerHTML = handHtml;
+
+            currentEndlessAnswerStr = calcMahjongScoreStr(problem.han, problem.fu, problem.isOya, problem.isTsumo);
+
+            let options = [currentEndlessAnswerStr];
+            let dummyPool = [];
+            
+            if (problem.isTsumo) {
+                dummyPool = ["300・500", "500オール", "400・700", "700オール", "500・1000", "1000オール", "700・1300", "1300オール", "800・1600", "1600オール", "1000・2000", "2000オール", "2000・4000", "4000オール", "2600オール", "3200オール"];
+            } else {
+                dummyPool = ["1000", "1300", "1500", "1600", "2000", "2400", "2600", "2900", "3200", "3900", "4800", "5200", "5800", "7700", "8000", "9600", "11600", "12000"];
+            }
+
+            while(options.length < 3) {
+                let r = dummyPool[Math.floor(Math.random() * dummyPool.length)];
+                if (!options.includes(r)) options.push(r);
+            }
+            options.sort(() => Math.random() - 0.5);
+
+            const optionsContainer = document.getElementById('endless-options');
+            optionsContainer.innerHTML = '';
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'action-btn';
+                btn.style.width = 'auto';
+                btn.style.padding = '10px 30px';
+                btn.textContent = opt + (opt.includes("オール") || opt.includes("・") ? "" : "点");
+                btn.onclick = () => checkEndlessQuiz(opt, btn);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function checkEndlessQuiz(selectedScore, btnElement) {
+            const fb = document.getElementById('adv-prac-fb-endless');
+            const buttons = document.getElementById('endless-options').querySelectorAll('button');
+            buttons.forEach(b => b.disabled = true);
+
+            const correctDisplay = currentEndlessAnswerStr + (currentEndlessAnswerStr.includes("オール") || currentEndlessAnswerStr.includes("・") ? "" : "点");
+
+            if (selectedScore === currentEndlessAnswerStr) {
+                fb.innerHTML = '正解です。素晴らしい。';
+                fb.className = 'feedback correct';
+                btnElement.style.backgroundColor = '#2ecc71';
+            } else {
+                fb.innerHTML = `残念。正解は <span style="color: #e74c3c;">${correctDisplay}</span> でした。`;
+                fb.className = 'feedback incorrect';
+                btnElement.style.backgroundColor = '#e74c3c';
+            }
+            
+            document.getElementById('endless-yaku').style.display = 'block';
+            document.getElementById('endless-hint').style.display = 'block';
+            document.getElementById('adv-prac-next-endless').style.display = 'inline-block';
+        }
+
+        window.onload = () => {
+            initSelector();
+            loadQuestion(0);
+        };
+    </script>
+</body>
+</html>

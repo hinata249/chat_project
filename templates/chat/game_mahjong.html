@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>本格4人麻雀アプリ</title>
+    <style>
+        body { background-color: #2c3e50; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: sans-serif; user-select: none; }
+        .game-layout { display: grid; grid-template-columns: 120px 560px 120px; grid-template-rows: 100px 560px 100px; align-items: center; justify-items: center; }
+        
+        .mahjong-table { grid-column: 2; grid-row: 2; background-color: #1e824c; width: 560px; height: 560px; border: 16px solid #8e44ad; border-radius: 10px; box-shadow: 0 10px 20px rgba(0,0,0,0.5); position: relative; box-sizing: border-box; z-index: 10; }
+        
+        .center-box { position: absolute; background-color: #2e3131; width: 160px; height: 160px; border: 2px solid #fff; border-radius: 8px; display: grid; grid-template-columns: 32px 92px 32px; grid-template-rows: 32px 92px 32px; z-index: 10; top: 184px; left: 184px; box-sizing: border-box; }
+        .center-info { grid-column: 2; grid-row: 2; background-color: #1a1c1c; color: white; display: flex; flex-direction: column; justify-content: center; align-items: center; font-weight: bold; border-radius: 4px; font-size: 12px; text-align: center; line-height: 1.2; }
+        .dora-indicator { margin-top: 4px; display: flex; align-items: center; gap: 3px; font-size: 11px; }
+        .dora-tile { width: 18px; height: 24px; background-color: #f5f5f0; border: 1px solid #ccc; border-bottom: 2px solid #b3b3b0; display: flex; justify-content: center; align-items: center; font-size: 11px; border-radius: 2px; }
+        .score-display { display: flex; justify-content: center; align-items: center; font-size: 14px; font-weight: bold; color: #00ffcc; font-family: monospace; letter-spacing: 1px; white-space: nowrap; }
+        .score-toimen  { grid-column: 2; grid-row: 1; transform: rotate(180deg); }
+        .score-kamicha { grid-column: 1; grid-row: 2; transform: rotate(90deg); }
+        .score-shimochi{ grid-column: 3; grid-row: 2; transform: rotate(-90deg); }
+        .score-jibun   { grid-column: 2; grid-row: 3; color: #f1c40f; }
+        
+        .riichi-stick { position: absolute; background-color: white; border: 1px solid #ccc; border-radius: 4px; display: none; z-index: 15; }
+        #riichiStick-jibun { top: 112px; left: 50px; width: 60px; height: 6px; }
+        #riichiStick-toimen { top: 42px; left: 50px; width: 60px; height: 6px; }
+        #riichiStick-jibun::after, #riichiStick-toimen::after { content: ""; position: absolute; width: 8px; height: 6px; background-color: red; left: 26px; }
+        #riichiStick-kamicha { top: 50px; left: 42px; width: 6px; height: 60px; }
+        #riichiStick-shimochi { top: 50px; left: 112px; width: 6px; height: 60px; }
+        #riichiStick-kamicha::after, #riichiStick-shimochi::after { content: ""; position: absolute; width: 6px; height: 8px; background-color: red; top: 26px; }
+        
+        .river-box { position: absolute; background-color: rgba(0, 0, 0, 0.3); border: 2px solid rgba(255, 255, 255, 0.1); border-radius: 6px; z-index: 5; }
+        .jibun-river { left: 182px; top: 350px; width: 164px; height: 114px; }
+        .toimen-river { left: 182px; top: 64px; width: 164px; height: 114px; }
+        .shimochi-river { left: 350px; top: 182px; width: 114px; height: 164px; }
+        .kamicha-river { left: 64px; top: 182px; width: 114px; height: 164px; }
+        
+        .kamicha-area { grid-column: 1; grid-row: 2; width: 560px; height: 120px; transform: rotate(90deg); display: flex; justify-content: center; align-items: center; z-index: 20; justify-self: center; }
+        .toimen-area  { grid-column: 2; grid-row: 1; width: 560px; height: 100px; transform: rotate(180deg); display: flex; justify-content: center; align-items: center; z-index: 20; justify-self: center; }
+        .shimoch-area { grid-column: 3; grid-row: 2; width: 560px; height: 120px; transform: rotate(-90deg); display: flex; justify-content: center; align-items: center; z-index: 20; justify-self: center; }
+        
+        .jibun-area { 
+            grid-column: 2; 
+            grid-row: 3; 
+            width: 750px; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-self: center; 
+            position: relative;
+            z-index: 100;
+            pointer-events: none; 
+        }
+
+        .hand-container { display: flex; background-color: rgba(0, 0, 0, 0.2); padding: 10px; border-radius: 5px; align-items: center; }
+        .hand-tiles-group { display: flex; gap: 4px; }
+
+        .jibun-area .hand-container {
+            flex-direction: column;
+            background-color: transparent;
+            padding: 0;
+            align-items: flex-start;
+            width: 720px;
+            pointer-events: none;
+        }
+
+        #handTiles {
+            display: flex;
+            flex-direction: row;
+            gap: 4px;
+            width: 720px;
+            justify-content: flex-start;
+            background-color: rgba(0, 0, 0, 0.4);
+            padding: 10px;
+            border-radius: 5px;
+            pointer-events: auto; 
+            z-index: 50;
+            position: relative;
+        }
+
+        #jibunFuro {
+            pointer-events: auto;
+            margin-left: auto;
+            margin-bottom: 5px;
+            min-height: 40px;
+            z-index: 40;
+            position: relative;
+        }
+
+        .tile { background-color: #f5f5f0; border: 2px solid #ccc; border-bottom: 6px solid #b3b3b0; border-radius: 4px; width: 36px; height: 52px; display: flex; justify-content: center; align-items: center; font-size: 16px; font-weight: bold; color: #333; box-sizing: border-box; }
+        
+        #handTiles .tile { cursor: pointer; transition: transform 0.1s; position: relative; }
+        #handTiles .tile:hover { transform: translateY(-8px); background-color: #ffffff; }
+        #handTiles .tile:nth-child(14) { margin-left: 16px; }
+
+        .not-riichi-tile { background-color: #ccc !important; color: #888 !important; cursor: not-allowed !important; }
+        .not-riichi-tile:hover { transform: none !important; }
+        .riichi-target-tile { box-shadow: 0 0 10px #f1c40f; border-color: #f1c40f !important; }
+        
+        .riichi-mode .tile { background-color: #ccc !important; cursor: not-allowed !important; }
+        .riichi-mode .tile:hover { transform: none !important; background-color: #ccc !important; }
+        .riichi-mode .tile:nth-child(14) { background-color: #f5f5f0 !important; cursor: pointer !important; }
+        .riichi-mode .tile:nth-child(14):hover { transform: translateY(-8px) !important; background-color: #ffffff !important; }
+        
+        .back-tile { background-color: #2980b9; border: 2px solid #3498db; border-bottom: 6px solid #1f3a60; border-radius: 4px; width: 36px; height: 52px; cursor: default; box-sizing: border-box; }
+        .discard-tile { position: absolute; width: 24px; height: 34px; font-size: 11px; font-weight: bold; display: flex; justify-content: center; align-items: center; background-color: #f5f5f0; border: 1px solid #ccc; border-bottom: 3px solid #b3b3b0; box-sizing: border-box; border-radius: 2px; }
+        .riichi-discard { border: 2px solid #ff3333 !important; box-shadow: 0 0 8px #ff3333 !important; z-index: 10; }
+        .manzu { color: #e74c3c !important; } .pinzu { color: #2980b9 !important; } .souzu { color: #27ae60 !important; } .jihai { color: #2c3e50 !important; }
+        
+        .tsumogiri { filter: brightness(0.65); }
+        
+        .dora-highlight { background-color: #fff9c4 !important; border-color: #f1c40f !important; }
+        .aka-dora { background-color: #ffeaea !important; border-color: #e74c3c !important; color: #c0392b !important; }
+        .aka-dora.dora-highlight { background-color: #ffe0b2 !important; border-color: #e67e22 !important; color: #d35400 !important; box-shadow: inset 0 0 10px #e67e22 !important; }
+        .highlight-same-discard { box-shadow: 0 0 12px #00ffff, inset 0 0 10px #00ffff !important; border-color: #00ffff !important; background-color: #e0ffff !important; color: #008b8b !important; }
+
+        .riichi-animation { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0); font-size: 40px; color: #e74c3c; background-color: rgba(255, 255, 255, 0.95); padding: 15px 30px; border: 4px solid #e74c3c; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.5); z-index: 9999; opacity: 0; transition: transform 0.2s ease-out, opacity 0.2s ease-out; pointer-events: none; }
+        .riichi-animation.show { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        .btn-group { position: absolute; right: -140px; display: flex; flex-direction: column; gap: 10px; width: 120px; z-index: 20; pointer-events: auto !important; }
+        .action-btn { padding: 10px 20px; font-size: 16px; background-color: #e67e22; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        .action-btn:hover { background-color: #d35400; }
+        .riichi-btn { background-color: #9b59b6; display: none; }
+        .riichi-btn:hover { background-color: #8e44ad; }
+        .agari-btn { padding: 10px 20px; font-size: 16px; font-weight: bold; background-color: #e74c3c; color: white; border: none; border-radius: 5px; cursor: pointer; display: none; animation: pulse 1s infinite; }
+        .agari-btn:hover { background-color: #c0392b; }
+        .control-wrapper { display: flex; align-items: center; justify-content: center; gap: 20px; width: 100%; }
+        
+        .furo-container { display: flex; flex-direction: row-reverse; gap: 5px; margin: 0 10px; }
+        .furo-set { display: flex; background-color: rgba(0,0,0,0.2); padding: 5px; border-radius: 5px; }
+        .furo-tile { width: 28px; height: 40px; font-size: 12px; font-weight: bold; display: flex; justify-content: center; align-items: center; background-color: #f5f5f0; border: 1px solid #ccc; border-bottom: 4px solid #b3b3b0; border-radius: 3px; z-index: 45; box-sizing: border-box; }
+        .furo-back-tile { background-color: #2980b9; border: 1px solid #ccc; border-bottom: 4px solid #b3b3b0; border-radius: 3px; width: 28px; height: 40px; box-sizing: border-box; z-index: 45; }
+        .highlight-furo { background-color: #fcf3cf; border: 2px solid #f1c40f !important; border-bottom: 4px solid #d4ac0d !important; }
+        .furo-back-tile.highlight-furo { background-color: #2980b9 !important; border: 2px solid #f1c40f !important; border-bottom: 4px solid #d4ac0d !important; box-shadow: inset 0 0 10px #f1c40f; }
+        
+        #nextRoundBtn { display: none; position: absolute; bottom: 30px; right: 30px; padding: 15px 30px; font-size: 18px; font-weight: bold; background-color: #27ae60; color: white; border: none; border-radius: 8px; cursor: pointer; z-index: 100; box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: transform 0.1s; }
+        #nextRoundBtn:hover { transform: translateY(-2px); background-color: #2ecc71; }
+        
+        #resetGameBtn { position: absolute; top: 20px; left: 20px; padding: 10px 20px; font-size: 14px; font-weight: bold; background-color: #c0392b; color: white; border: none; border-radius: 6px; cursor: pointer; z-index: 100; box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: background-color 0.2s; }
+        #resetGameBtn:hover { background-color: #e74c3c; }
+        #yakuListOpenBtn { position: absolute; top: 20px; left: 200px; padding: 10px 20px; font-size: 14px; font-weight: bold; background-color: #2980b9; color: white; border: none; border-radius: 6px; cursor: pointer; z-index: 100; box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: background-color 0.2s; }
+        #yakuListOpenBtn:hover { background-color: #3498db; }
+        
+        #logOpenBtn { position: absolute; top: 20px; left: 300px; padding: 10px 20px; font-size: 14px; font-weight: bold; background-color: #f39c12; color: white; border: none; border-radius: 6px; cursor: pointer; z-index: 100; box-shadow: 0 4px 6px rgba(0,0,0,0.3); transition: background-color 0.2s; }
+        #logOpenBtn:hover { background-color: #e67e22; }
+
+        .log-entry { margin-bottom: 20px; border-bottom: 1px solid #bdc3c7; padding-bottom: 15px; }
+        .log-title { font-weight: bold; color: #2c3e50; font-size: 18px; margin-bottom: 8px; border-left: 4px solid #f39c12; padding-left: 10px; }
+        .log-text { white-space: pre-wrap; font-size: 14px; line-height: 1.5; color: #34495e; background-color: #f9f9f9; padding: 10px; border-radius: 4px; }
+
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 200; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 30px; border-radius: 12px; width: 80%; max-width: 800px; max-height: 80vh; overflow-y: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .modal-content h2 { margin-top: 0; color: #2c3e50; text-align: center; border-bottom: 2px solid #ecf0f1; padding-bottom: 10px; }
+        .yaku-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        .yaku-table th, .yaku-table td { border: 1px solid #bdc3c7; padding: 10px; text-align: left; }
+        .yaku-table th { background-color: #ecf0f1; color: #34495e; font-weight: bold; }
+        .modal-close-btn { display: block; margin: 20px auto 0; padding: 10px 30px; font-size: 16px; background-color: #95a5a6; color: white; border: none; border-radius: 5px; cursor: pointer; transition: background-color 0.2s; }
+        .modal-close-btn:hover { background-color: #7f8c8d; }
+    </style>
+</head>
+<body>
+    <a href="{% url 'learning' %}" style="position: absolute; top: 20px; right: 20px; padding: 10px 20px; background-color: #2980b9; color: white; text-decoration: none; border-radius: 6px;">学習モードへ</a>
+
+    <button id="resetGameBtn" onclick="openMinigameModal()">チャットに戻る</button>
+    <a href="/room/" id="resetGameBtn" style="text-decoration:none;">チャットに戻る</a>
+    <button id="yakuListOpenBtn" onclick="document.getElementById('yakuModal').style.display='flex'">役一覧</button>
+    <button id="logOpenBtn" onclick="document.getElementById('logModal').style.display='flex'">対局ログ</button>
+    <button id="nextRoundBtn">次の局へ</button>
+
+    <div id="logModal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>点数移動ログ</h2>
+            <div id="logContainer">
+                {% for log in game_log %}
+                <div class="log-entry">
+                    <div class="log-title">{{ log.title }}</div>
+                    <div class="log-text">{{ log.text }}</div>
+                </div>
+                {% empty %}
+                <p style="text-align: center; color: #7f8c8d; margin-top: 20px;">まだログはありません</p>
+                {% endfor %}
+            </div>
+            <button class="modal-close-btn" onclick="document.getElementById('logModal').style.display='none'">閉じる</button>
+        </div>
+    </div>
+
+    <div id="yakuModal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>実装済みの役一覧</h2>
+            
+            <h3>1翻役</h3>
+            <table class="yaku-table">
+                <tr><th>役名</th><th>条件</th></tr>
+                <tr><td>立直（リーチ）</td><td>テンパイ時に1000点を出し宣言する。一発や裏ドラの権利あり。</td></tr>
+                <tr><td>一発（イッパツ）</td><td>リーチ後、1巡以内にアガる。</td></tr>
+                <tr><td>門前清自摸和（ツモ）</td><td>鳴かずにメンゼンでテンパイし、ツモアガる。</td></tr>
+                <tr><td>平和（ピンフ）</td><td>面子がすべて順子、雀頭が役牌以外、待ちが両面。</td></tr>
+                <tr><td>断么九（タンヤオ）</td><td>2～8の数牌だけでアガる。</td></tr>
+                <tr><td>一盃口（イーペーコー）</td><td>同じ順子を2つ作る。</td></tr>
+                <tr><td>役牌（ヤクハイ）</td><td>三元牌、場風、自風のいずれかを3枚揃える。</td></tr>
+                <tr><td>海底撈月（ハイテイ）</td><td>局の最後になる牌でツモアガる。</td></tr>
+                <tr><td>河底撈魚（ホウテイ）</td><td>局の最後の捨て牌でロンアガる。</td></tr>
+                <tr><td>槍槓（チャンカン）</td><td>他家が加カンした牌でロンアガる。</td></tr>
+                <tr><td>嶺上開花（リンシャン）</td><td>カンをした時にツモる嶺上牌でツモアガる。</td></tr>
+            </table>
+
+            <h3>2翻役</h3>
+            <table class="yaku-table">
+                <tr><th>役名</th><th>条件</th></tr>
+                <tr><td>ダブル立直</td><td>鳴きのない1巡目でリーチをかける。</td></tr>
+                <tr><td>対々和（トイトイ）</td><td>面子をすべて刻子（または槓子）で作る。</td></tr>
+                <tr><td>七対子（チートイツ）</td><td>対子を7組揃える。</td></tr>
+                <tr><td>三色同順（サンショク）</td><td>3種類の数牌で同じ数字の順子を作る（鳴くと1翻）。</td></tr>
+                <tr><td>一気通貫（イッツウ）</td><td>1種類の数牌で123、456、789の順子を作る（鳴くと1翻）。</td></tr>
+                <tr><td>混全帯么九（チャンタ）</td><td>すべての面子と雀頭に1、9、字牌を含む（鳴くと1翻）。</td></tr>
+                <tr><td>三暗刻（サンアンコウ）</td><td>暗刻を3つ作る。</td></tr>
+                <tr><td>三色同刻</td><td>3種類の数牌で同じ数字の刻子を作る。</td></tr>
+                <tr><td>三槓子（サンカンツ）</td><td>槓子を3つ作る。</td></tr>
+                <tr><td>小三元（ショウサンゲン）</td><td>三元牌のいずれかを雀頭、残り2つを刻子にする。</td></tr>
+                <tr><td>混老頭（ホンロウトウ）</td><td>1、9と字牌のみで構成する。</td></tr>
+            </table>
+
+            <h3>3翻・6翻役</h3>
+            <table class="yaku-table">
+                <tr><th>役名</th><th>条件</th></tr>
+                <tr><td>混一色（ホンイツ）</td><td>数牌1種類と字牌だけでアガる（鳴くと2翻）。</td></tr>
+                <tr><td>純全帯么九（ジュンチャン）</td><td>すべての面子と雀頭に1、9を含み、字牌なし（鳴くと2翻）。</td></tr>
+                <tr><td>二盃口（リャンペーコー）</td><td>一盃口を2組作る。</td></tr>
+                <tr><td>清一色（チンイツ）</td><td>数牌の1種類だけでアガる（鳴くと5翻）。</td></tr>
+            </table>
+
+            <h3>役満</h3>
+            <table class="yaku-table">
+                <tr><th>役名</th><th>条件</th></tr>
+                <tr><td>国士無双</td><td>1、9と字牌の全13種を揃え、どれかを対子にする。</td></tr>
+                <tr><td>字一色（ツーイーソー）</td><td>字牌だけでアガる。</td></tr>
+                <tr><td>緑一色（リューイーソー）</td><td>2、3、4、6、8索と發だけでアガる。</td></tr>
+                <tr><td>清老頭（チンロウトウ）</td><td>1、9だけでトイトイを作る。</td></tr>
+                <tr><td>四暗刻（スーアンコウ）</td><td>暗刻を4つ作る。</td></tr>
+                <tr><td>大三元（ダイサンゲン）</td><td>白、發、中のすべてを刻子にする。</td></tr>
+                <tr><td>四喜和（スーシーホウ）</td><td>4種類の風牌すべてを使用する（大四喜・小四喜）。</td></tr>
+                <tr><td>四槓子（スーカンツ）</td><td>槓子を4つ作る。</td></tr>
+                <tr><td>九蓮宝燈</td><td>数牌1種類で1112345678999＋同種1枚をメンゼンで作る。</td></tr>
+                <tr><td>天和 / 地和</td><td>親が配牌でアガる（天和）。子が1巡目のツモでアガる（地和）。</td></tr>
+            </table>
+            
+            <button class="modal-close-btn" onclick="document.getElementById('yakuModal').style.display='none'">閉じる</button>
+        </div>
+    </div>
+
+    <div class="game-layout">
+        <div class="toimen-area">
+            <div class="hand-container">
+                <div id="toimenFuro" class="furo-container"></div>
+                <div class="hand-tiles-group" id="toimenHand">
+                    <div class="back-tile"></div><div class="back-tile"></div><div class="back-tile"></div><div class="back-tile"></div><div class="back-tile"></div><div class="back-tile"></div><div class="back-tile"></div><div class="back-tile"></div><div class="back-tile"></div><div class="back-tile"></div><div class="back-tile"></div><div class="back-tile"></div><div class="back-tile"></div>
+                </div>
+            </div>
+        </div>
+        <div class="kamicha-area">
+            <div class="hand-container">
+                <div id="kamichaFuro" class="furo-container"></div>
+                <div class="hand-tiles-group" id="kamichaHand">
+                    <div class="back-tile"></div><div class="back-tile"></div><div class="back-tile"></div><div class="back-tile"></div><div class="back-tile"></div><div class="back-tile"></div><div class="back-tile"></div><div class="back-tile"></div><div class="back-tile"></div><div class="back-tile"></div><div class="back-tile"></div><div class="back-tile"></div><div class="back-tile"></div>
+                </div>
+            </div>
+        </div>
+        <div class="mahjong-table">
+            <div class="center-box" id="centerBox">
+                <div class="score-display score-toimen" id="score-toimen">ひなた: {% if oya == 'toimen' %}東 {% endif %}{{ scores.toimen }}</div>
+                <div class="score-display score-kamicha" id="score-kamicha">マチョ: {% if oya == 'kamicha' %}東 {% endif %}{{ scores.kamicha }}</div>
+                <div class="riichi-stick" id="riichiStick-toimen"></div>
+                <div class="riichi-stick" id="riichiStick-kamicha"></div>
+                <div class="riichi-stick" id="riichiStick-shimochi"></div>
+                <div class="riichi-stick" id="riichiStick-jibun"></div>
+                <div class="center-info">
+                    <div id="kyokuNameDisplay">{{ kyoku_name }}</div>
+                    <div id="honbaDisplay">{{ honba }}本場</div>
+                    <div id="kyotakuDisplay">供託{{ kyotaku }}本</div>
+                    <div class="dora-indicator">ドラ表 <div id="doraIndicatorUi" style="display: flex; gap: 2px;"></div></div>
+                </div>
+                <div class="score-display score-shimochi" id="score-shimochi">まゆ: {% if oya == 'shimochi' %}東 {% endif %}{{ scores.shimochi }}</div>
+                <div class="score-display score-jibun" id="score-jibun">自分: {% if oya == 'jibun' %}東 {% endif %}{{ scores.jibun }}</div>
+            </div>
+            <div class="river-box jibun-river" id="jibunDiscard"></div>
+            <div class="river-box shimochi-river" id="shimochiDiscard"></div>
+            <div class="river-box toimen-river" id="toimenDiscard"></div>
+            <div class="river-box kamicha-river" id="kamichaDiscard"></div>
+        </div>
+        <div class="shimoch-area">
+            <div class="hand-container">
+                <div class="hand-tiles-group" id="shimochiHand">
+                    <div class="back-tile"></div><div class="back-tile"></div><div class="back-tile"></div><div class="back-tile"></div><div class="back-tile"></div><div class="back-tile"></div><div class="back-tile"></div><div class="back-tile"></div><div class="back-tile"></div><div class="back-tile"></div><div class="back-tile"></div><div class="back-tile"></div><div class="back-tile"></div>
+                </div>
+                <div id="shimochiFuro" class="furo-container"></div>
+            </div>
+        </div>
+        <div class="jibun-area">
+            <div style="display: flex; align-items: center; justify-content: center; gap: 10px; height: 20px;">
+                <div id="furitenBadge" style="display: none; background-color: #c0392b; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;">フリテン</div>
+                <div id="machiDisplay" style="color: #f1c40f; font-weight: bold; font-size: 14px;"></div>
+            </div>
+            <div class="control-wrapper">
+                <div class="hand-container">
+                    <div id="handTiles" class="hand-tiles-group">
+                        {% for t in hand %}
+                            <div class="tile {% if '萬' in t.text %}manzu{% elif '筒' in t.text %}pinzu{% elif '索' in t.text %}souzu{% else %}jihai{% endif %} {% if t.is_aka %}aka-dora{% endif %} {% if t.is_dora %}dora-highlight{% endif %}" data-raw="{{ t.raw }}" onclick="discardTile(this)" onmouseenter="highlightSameDiscards('{{ t.text }}')" onmouseleave="removeHighlightSameDiscards()">{{ t.text }}</div>
+                        {% endfor %}
+                    </div>
+                    <div id="jibunFuro" class="furo-container"></div>
+                </div>
+                <div class="btn-group">
+                    <button class="action-btn riichi-btn" id="riichiBtn" onclick="doRiichi()">リーチ</button>
+                    <button class="agari-btn" id="agariBtn" onclick="declareAgari('ツモ')">ツモアガリ！</button>
+                    <div id="nakiBtnGroup" style="display: none; flex-direction: column; gap: 10px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        let hasTsumoed = false;
+        let isProcessing = false; 
+        let isGameOver = false;
+        let isRiichi = false;
+        let isSelectingRiichiTile = false; 
+        let riichiDeclarableTiles = [];    
+        let currentScoreDetails = "";
+        let currentRonTile = "";
+        let pointsDiffData = null;
+        let riichiIndex = { jibun: -1, shimochi: -1, toimen: -1, kamicha: -1 };
+
+        let currentDoraTiles = {{ dora_tiles|safe }};
+        let doraIndicatorsRaw = {{ dora_indicators|safe }};
+
+        const tilesOrder = [];
+        for (let i = 1; i <= 9; i++) tilesOrder.push(i + '萬');
+        for (let i = 1; i <= 9; i++) tilesOrder.push(i + '筒');
+        for (let i = 1; i <= 9; i++) tilesOrder.push(i + '索');
+        tilesOrder.push('東', '南', '西', '北', '白', '發', '中');
+
+        function highlightSameDiscards(targetText) {
+            const normTarget = targetText.replace('赤', '');
+            document.querySelectorAll('.discard-tile').forEach(el => {
+                const raw = el.getAttribute('data-raw') || el.textContent.trim();
+                if (raw.replace('赤', '') === normTarget) {
+                    el.classList.add('highlight-same-discard');
+                }
+            });
+        }
+
+        function removeHighlightSameDiscards() {
+            document.querySelectorAll('.discard-tile').forEach(el => {
+                el.classList.remove('highlight-same-discard');
+            });
+        }
+
+        function displayActionText(playerName, actionText) {
+            const effect = document.createElement('div');
+            effect.className = 'riichi-animation';
+            effect.innerText = playerName + ' ' + actionText;
+            document.body.appendChild(effect);
+            setTimeout(() => { effect.classList.add('show'); }, 10);
+            setTimeout(() => {
+                effect.classList.remove('show');
+                setTimeout(() => { effect.remove(); }, 200);
+            }, 1200);
+        }
+
+        function displayRiichiText(playerName) {
+            displayActionText(playerName, '立直');
+        }
+
+        function createTileElement(rawTileText, isFuro=false) {
+            const tile = document.createElement('div');
+            const normText = rawTileText.replace('赤', '');
+            const tClass = normText.includes('萬') ? 'manzu' : normText.includes('筒') ? 'pinzu' : normText.includes('索') ? 'souzu' : 'jihai';
+            tile.className = isFuro ? `furo-tile ${tClass}` : `tile ${tClass}`;
+            
+            if (rawTileText.includes('赤')) tile.classList.add('aka-dora');
+            if (currentDoraTiles.includes(normText)) tile.classList.add('dora-highlight');
+            
+            tile.setAttribute('data-raw', rawTileText);
+            tile.textContent = normText;
+            
+            if (!isFuro) {
+                tile.onmouseenter = function() { highlightSameDiscards(normText); };
+                tile.onmouseleave = function() { removeHighlightSameDiscards(); };
+            }
+            
+            return tile;
+        }
+
+        function applyPointsDiff(diff) {
+            if (!diff) return;
+            const nameMap = { 'jibun': '自分', 'shimochi': '下家', 'toimen': '対面', 'kamicha': '上家' };
+            for (let p in diff) {
+                let el = document.getElementById(`score-${p}`);
+                if (el) {
+                    let cur = parseInt(el.innerText.replace(/[^0-9-]/g, ''));
+                    let hasOya = el.innerText.includes('東');
+                    el.innerText = `${nameMap[p]}: ` + (hasOya ? '東 ' : '') + (cur + diff[p]);
+                }
+            }
+        }
+
+        function updateDoraIndicators(indicatorsRaw, currentTiles) {
+            const indUi = document.getElementById('doraIndicatorUi');
+            indUi.innerHTML = '';
+            indicatorsRaw.forEach(raw => {
+                const tile = document.createElement('div');
+                const normText = raw.replace('赤', '');
+                const tClass = normText.includes('萬') ? 'manzu' : normText.includes('筒') ? 'pinzu' : normText.includes('索') ? 'souzu' : 'jihai';
+                tile.className = `dora-tile ${tClass}`;
+                if (raw.includes('赤')) tile.classList.add('aka-dora');
+                if (currentTiles.includes(normText)) tile.classList.add('dora-highlight');
+                tile.textContent = normText;
+                indUi.appendChild(tile);
+            });
+        }
+
+        window.onload = function() {
+            updateDoraIndicators(doraIndicatorsRaw, currentDoraTiles);
+            const oya = "{{ oya }}";
+            if (oya === 'jibun') {
+                requestTsumo();
+            } else {
+                nextTurn(oya);
+            }
+        };
+
+        function checkTobi() {
+            let tobi = false;
+            ['jibun', 'shimochi', 'toimen', 'kamicha'].forEach(p => {
+                let el = document.getElementById(`score-${p}`);
+                if (el) {
+                    let cur = parseInt(el.innerText.replace(/[^0-9-]/g, ''));
+                    if (cur <= 0) tobi = true;
+                }
+            });
+            return tobi;
+        }
+
+        function showEndGameButton() {
+            const nextBtn = document.getElementById('nextRoundBtn');
+            nextBtn.innerText = "ゲーム終了 (初めから)";
+            nextBtn.style.backgroundColor = "#c0392b";
+            nextBtn.style.display = 'block';
+            nextBtn.onclick = () => {
+                window.location.href = '/?reset=true';
+            };
+        }
+
+        async function triggerNextRoundTransition(next_kyoku, next_honba, next_kyotaku, log_title, log_text) {
+            let url = `/sync_next_kyoku/?kyoku=${next_kyoku}&honba=${next_honba}&kyotaku=${next_kyotaku}&jibun=${document.getElementById('score-jibun').innerText.replace(/[^0-9-]/g,'')}&shimochi=${document.getElementById('score-shimochi').innerText.replace(/[^0-9-]/g,'')}&toimen=${document.getElementById('score-toimen').innerText.replace(/[^0-9-]/g,'')}&kamicha=${document.getElementById('score-kamicha').innerText.replace(/[^0-9-]/g,'')}`;
+            if (log_title && log_text) {
+                url += `&log_title=${encodeURIComponent(log_title)}&log_text=${encodeURIComponent(log_text)}`;
+            }
+            await fetch(url);
+            window.location.href = '/minigames/mahjong/';
+        }
+
+        function addLogToModal(title, text) {
+            const container = document.getElementById('logContainer');
+            const emptyMsg = container.querySelector('p');
+            if (emptyMsg) emptyMsg.remove();
+
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            const titleDiv = document.createElement('div');
+            titleDiv.className = 'log-title';
+            titleDiv.innerText = title;
+            const textDiv = document.createElement('div');
+            textDiv.className = 'log-text';
+            textDiv.innerText = text;
+            entry.appendChild(titleDiv);
+            entry.appendChild(textDiv);
+            container.appendChild(entry);
+            
+            container.parentElement.scrollTop = container.parentElement.scrollHeight;
+        }
+
+        function syncCpuHandLen(player, len) {
+            const area = document.getElementById(`${player}Hand`);
+            if (!area) return;
+            while(area.children.length > len) {
+                area.removeChild(area.lastElementChild);
+            }
+            while(area.children.length < len) {
+                const tile = document.createElement('div');
+                tile.className = 'back-tile';
+                area.appendChild(tile);
+            }
+        }
+
+        function renderCpuFuro(player, furoList) {
+            const furoArea = document.getElementById(`${player}Furo`);
+            if (!furoArea) return;
+            furoArea.innerHTML = '';
+            furoList.forEach(furoSet => {
+                const setDiv = document.createElement('div'); setDiv.className = 'furo-set';
+                let tiles = furoSet.tiles; let highlightIndex = -1;
+                
+                if (furoSet.action === 'ankan') {
+                    tiles.forEach((t, i) => {
+                        if (i === 0 || i === 3) {
+                            const tileEl = document.createElement('div');
+                            tileEl.className = 'furo-back-tile';
+                            setDiv.appendChild(tileEl);
+                        } else {
+                            setDiv.appendChild(createTileElement(t, true));
+                        }
+                    });
+                } else if (furoSet.action === 'kakan') {
+                    let renderTiles = [tiles[3], tiles[0], tiles[1], tiles[2]];
+                    renderTiles.forEach((t, i) => {
+                        if (i === 0) {
+                            const tileEl = document.createElement('div');
+                            tileEl.className = 'furo-back-tile';
+                            setDiv.appendChild(tileEl);
+                        } else {
+                            setDiv.appendChild(createTileElement(t, true));
+                        }
+                    });
+                } else if (furoSet.action === 'kan') {
+                    if (furoSet.source === 'kamicha') highlightIndex = 0;
+                    else if (furoSet.source === 'toimen') highlightIndex = 1;
+                    else if (furoSet.source === 'shimochi') highlightIndex = tiles.length - 1;
+                    
+                    tiles.forEach((t, i) => {
+                        if (i === highlightIndex) {
+                            const tileEl = document.createElement('div');
+                            tileEl.className = 'furo-back-tile highlight-furo';
+                            setDiv.appendChild(tileEl);
+                        } else {
+                            setDiv.appendChild(createTileElement(t, true));
+                        }
+                    });
+                } else {
+                    if (furoSet.source === 'kamicha') highlightIndex = 0;
+                    else if (furoSet.source === 'toimen') highlightIndex = 1;
+                    else if (furoSet.source === 'shimochi') highlightIndex = tiles.length - 1;
+                    
+                    if (furoSet.action === 'chi') { 
+                        tiles = [furoSet.called_tile, ...tiles.filter(t => t !== furoSet.called_tile)]; 
+                        highlightIndex = 0; 
+                    }
+                    tiles.forEach((t, i) => {
+                        const tileEl = createTileElement(t, true);
+                        if (i === highlightIndex) { tileEl.classList.add('highlight-furo'); }
+                        setDiv.appendChild(tileEl);
+                    });
+                }
+                furoArea.appendChild(setDiv);
+            });
+        }
+
+        async function nextTurn(player) {
+            if (isGameOver) return;
+            if (player === 'jibun') {
+                isProcessing = false;
+                await requestTsumo();
+                return;
+            }
+            isProcessing = true;
+            const response = await fetch(`/cpu_turn/?cpu=${player}`);
+            const data = await response.json();
+            
+            handlePostDiscardData(data, player);
+        }
+
+        function handlePostDiscardData(data, discarder) {
+            if (data.cpu_naki) {
+                const nameMap = { 'shimochi': '下家', 'toimen': '対面', 'kamicha': '上家' };
+                let actStr = '鳴き';
+                if(data.naki_action === 'pon') actStr = 'ポン';
+                if(data.naki_action === 'chi') actStr = 'チー';
+                if(data.naki_action === 'kan') actStr = 'カン';
+                if(data.naki_action === 'ankan') actStr = '暗槓';
+                if(data.naki_action === 'kakan') actStr = '加槓';
+                displayActionText(nameMap[data.naki_player] || '自分', actStr);
+            }
+
+            if (data.cpu_just_riichi) {
+                const cpuNameMap = { 'shimochi': '下家', 'toimen': '対面', 'kamicha': '上家' };
+                displayRiichiText(cpuNameMap[discarder] || '自分');
+                const stick = document.getElementById(`riichiStick-${discarder}`);
+                if (stick) stick.style.display = 'block';
+                const scoreEl = document.getElementById(`score-${discarder}`);
+                if (scoreEl) {
+                    let cur = parseInt(scoreEl.innerText.replace(/[^0-9-]/g, ''));
+                    let hasOya = scoreEl.innerText.includes('東');
+                    scoreEl.innerText = `${cpuNameMap[discarder] || '自分'}: ` + (hasOya ? '東 ' : '') + (cur - 1000);
+                }
+                if (!data.cpu_naki) {
+                    riichiIndex[discarder] = data[`${discarder}_discards`].length - 1;
+                }
+            }
+            
+            ['jibun', 'shimochi', 'toimen', 'kamicha'].forEach(p => {
+                if (data[`${p}_discards`]) renderDiscards(`${p}Discard`, data[`${p}_discards`], data[`${p}_tsumogiri_flags`]);
+                if (p !== 'jibun') {
+                    if (data[`${p}_furo`]) renderCpuFuro(p, data[`${p}_furo`]);
+                    if (data[`${p}_hand_len`]) syncCpuHandLen(p, data[`${p}_hand_len`]);
+                }
+            });
+
+            if (data.is_furiten) {
+                document.getElementById('furitenBadge').style.display = 'block';
+            } else if (data.is_furiten !== undefined) {
+                document.getElementById('furitenBadge').style.display = 'none';
+            }
+
+            if (data.dora_indicators) {
+                doraIndicatorsRaw = data.dora_indicators;
+                currentDoraTiles = data.dora_tiles;
+                updateDoraIndicators(doraIndicatorsRaw, currentDoraTiles);
+            }
+
+            if (data.current_kyotaku !== undefined) {
+                document.getElementById('kyotakuDisplay').innerText = `供託${data.current_kyotaku}本`;
+            }
+
+            if (data.is_ryukyoku) {
+                handleRyukyokuEnd(data);
+                return;
+            }
+
+            if (data.machi_info) {
+                updateMachiDisplay(data.machi_info);
+            }
+
+            if (data.cpu_just_ron) {
+                isGameOver = true;
+                if (data.cpu_hands) { revealCpuHands(data.cpu_hands); }
+                applyPointsDiff(data.points_diff);
+                
+                let title = document.getElementById('kyokuNameDisplay').innerText + ' ' + document.getElementById('honbaDisplay').innerText;
+                let text = data.score_result;
+                addLogToModal(title, text);
+
+                let isGameEnd = checkTobi() || data.next_kyoku > 8;
+                if (isGameEnd) {
+                    setTimeout(() => {
+                        let msg = data.score_result;
+                        if (checkTobi()) {
+                            msg += "\n\n持ち点が0以下になったため、とび終了です！";
+                        } else {
+                            msg += "\n\n半荘終了です！";
+                        }
+                        alert(msg);
+                        showEndGameButton();
+                    }, 300);
+                } else {
+                    setTimeout(() => {
+                        alert(data.score_result);
+                        const nextBtn = document.getElementById('nextRoundBtn');
+                        nextBtn.innerText = "次の局へ";
+                        nextBtn.style.backgroundColor = "#27ae60";
+                        nextBtn.style.display = 'block';
+                        nextBtn.onclick = () => triggerNextRoundTransition(data.next_kyoku, data.next_honba, data.next_kyotaku, title, text);
+                    }, 300);
+                }
+                return;
+            }
+
+            let hasNaki = data.naki_info && (data.naki_info.pon || data.naki_info.kan || data.naki_info.chi);
+            if (data.ron_available || hasNaki) {
+                showNakiMenu(data, data.discarder || discarder, data.next_turn_player);
+            } else {
+                let fallbackPlayer = data.next_turn_player;
+                setTimeout(() => nextTurn(fallbackPlayer), 500);
+            }
+        }
+
+        function showNakiMenu(data, discarder, next_turn_player) {
+            const actionsContainer = document.getElementById('nakiBtnGroup');
+            actionsContainer.innerHTML = '';
+            let hasNaki = data.naki_info && (data.naki_info.pon || data.naki_info.kan || data.naki_info.chi);
+
+            const clearMenu = () => {
+                actionsContainer.innerHTML = '';
+                actionsContainer.style.display = 'none';
+            };
+
+            if (data.ron_available) {
+                currentRonTile = data.discard_tile;
+                currentScoreDetails = data.score_result;
+                pointsDiffData = data;
+                const ronBtn = document.createElement('button');
+                ronBtn.className = 'agari-btn';
+                ronBtn.style.display = 'block';
+                ronBtn.innerText = `ロンアガリ！`;
+                ronBtn.onclick = () => { clearMenu(); declareAgari('ロン'); };
+                actionsContainer.appendChild(ronBtn);
+            }
+
+            if (hasNaki) {
+                if (data.naki_info.kan) {
+                    data.naki_info.kan_patterns.forEach(pattern => {
+                        const btn = document.createElement('button'); btn.className = 'action-btn'; btn.style.backgroundColor = '#8e44ad';
+                        let consumeTiles = [...pattern]; consumeTiles.pop();
+                        let displayTexts = consumeTiles.map(t => t.replace('赤', ''));
+                        btn.innerText = `カン (${displayTexts.join('・')})`;
+                        btn.onclick = async () => { clearMenu(); await declareNaki('kan', data.discard_tile, JSON.stringify(consumeTiles), discarder); };
+                        actionsContainer.appendChild(btn);
+                    });
+                }
+                if (data.naki_info.pon) {
+                    data.naki_info.pon_patterns.forEach(pattern => {
+                        const btn = document.createElement('button'); btn.className = 'action-btn';
+                        let consumeTiles = [...pattern]; consumeTiles.pop();
+                        let displayTexts = consumeTiles.map(t => t.replace('赤', ''));
+                        btn.innerText = `ポン (${displayTexts.join('・')})`;
+                        btn.onclick = async () => { clearMenu(); await declareNaki('pon', data.discard_tile, JSON.stringify(consumeTiles), discarder); };
+                        actionsContainer.appendChild(btn);
+                    });
+                }
+                if (data.naki_info.chi) {
+                    data.naki_info.chi_patterns.forEach(pattern => {
+                        const btn = document.createElement('button'); btn.className = 'action-btn';
+                        let consumeTiles = pattern.filter(t => t !== data.discard_tile);
+                        let displayTexts = consumeTiles.map(t => t.replace('赤', ''));
+                        btn.innerText = `チー (${displayTexts.join('・')})`;
+                        btn.onclick = async () => { clearMenu(); await declareNaki('chi', data.discard_tile, JSON.stringify(consumeTiles), discarder); };
+                        actionsContainer.appendChild(btn);
+                    });
+                }
+            }
+
+            const passBtn = document.createElement('button'); passBtn.className = 'action-btn'; passBtn.style.backgroundColor = '#7f8c8d'; passBtn.innerText = 'パス';
+            passBtn.onclick = () => { 
+                clearMenu(); 
+                if (data.cpu_pass_ron_data) {
+                    isGameOver = true;
+                    if (data.cpu_pass_ron_data.cpu_hands) { revealCpuHands(data.cpu_pass_ron_data.cpu_hands); }
+                    applyPointsDiff(data.cpu_pass_ron_data.points_diff);
+                    
+                    let title = document.getElementById('kyokuNameDisplay').innerText + ' ' + document.getElementById('honbaDisplay').innerText;
+                    let text = data.cpu_pass_ron_data.score_result;
+                    addLogToModal(title, text);
+
+                    let isGameEnd = checkTobi() || data.cpu_pass_ron_data.next_kyoku > 8;
+                    if (isGameEnd) {
+                        setTimeout(() => {
+                            let msg = text;
+                            if (checkTobi()) msg += "\n\n持ち点が0以下になったため、とび終了です！";
+                            else msg += "\n\n半荘終了です！";
+                            alert(msg);
+                            showEndGameButton();
+                        }, 300);
+                    } else {
+                        setTimeout(() => {
+                            alert(text);
+                            const nextBtn = document.getElementById('nextRoundBtn');
+                            nextBtn.innerText = "次の局へ";
+                            nextBtn.style.backgroundColor = "#27ae60";
+                            nextBtn.style.display = 'block';
+                            nextBtn.onclick = () => triggerNextRoundTransition(data.cpu_pass_ron_data.next_kyoku, data.cpu_pass_ron_data.next_honba, data.cpu_pass_ron_data.next_kyotaku, title, text);
+                        }, 300);
+                    }
+                } else {
+                    nextTurn(next_turn_player); 
+                }
+            };
+            actionsContainer.appendChild(passBtn);
+            actionsContainer.style.display = 'flex';
+        }
+
+        async function requestTsumo() {
+            if (hasTsumoed || isGameOver) return; 
+            isProcessing = true;
+            const response = await fetch('/tsumo/');
+            const data = await response.json();
+
+            if (data.is_furiten) {
+                document.getElementById('furitenBadge').style.display = 'block';
+            } else if (data.is_furiten !== undefined) {
+                document.getElementById('furitenBadge').style.display = 'none';
+            }
+            
+            if (data.dora_indicators) {
+                doraIndicatorsRaw = data.dora_indicators;
+                currentDoraTiles = data.dora_tiles;
+                updateDoraIndicators(doraIndicatorsRaw, currentDoraTiles);
+            }
+
+            if (data.current_kyotaku !== undefined) {
+                document.getElementById('kyotakuDisplay').innerText = `供託${data.current_kyotaku}本`;
+            }
+
+            if (data.is_ryukyoku) { handleRyukyokuEnd(data); return; }
+
+            const handTiles = document.getElementById('handTiles');
+            const tile = createTileElement(data.tile);
+            tile.onclick = function() { discardTile(this); };
+            
+            riichiDeclarableTiles = data.riichi_declarable_tiles || []; 
+            updateMachiDisplay(data.machi_info);
+            
+            const rBtn = document.getElementById('riichiBtn');
+            if (data.can_riichi && !data.is_already_riichi) {
+                if(rBtn) { rBtn.style.display = 'block'; rBtn.innerText = "リーチ"; rBtn.style.backgroundColor = "#9b59b6"; }
+            } else {
+                if(rBtn) rBtn.style.display = 'none';
+            }
+            handTiles.appendChild(tile);
+            hasTsumoed = true;
+
+            const actionsContainer = document.getElementById('nakiBtnGroup');
+            actionsContainer.innerHTML = '';
+            let showActions = false;
+
+            if (data.ankan_patterns && data.ankan_patterns.length > 0) {
+                data.ankan_patterns.forEach(pattern => {
+                    const btn = document.createElement('button'); btn.className = 'action-btn'; btn.style.backgroundColor = '#8e44ad';
+                    let displayTexts = pattern.map(t => t.replace('赤', ''));
+                    btn.innerText = `暗槓 (${displayTexts[0]})`;
+                    btn.onclick = async () => { actionsContainer.innerHTML = ''; actionsContainer.style.display = 'none'; await declareNaki('ankan', pattern[0], JSON.stringify(pattern), 'jibun'); };
+                    actionsContainer.appendChild(btn);
+                });
+                showActions = true;
+            }
+            
+            if (data.kakan_patterns && data.kakan_patterns.length > 0) {
+                data.kakan_patterns.forEach(t => {
+                    const btn = document.createElement('button'); btn.className = 'action-btn'; btn.style.backgroundColor = '#8e44ad';
+                    btn.innerText = `加槓 (${t.replace('赤', '')})`;
+                    btn.onclick = async () => { actionsContainer.innerHTML = ''; actionsContainer.style.display = 'none'; await declareNaki('kakan', t, '[]', 'jibun'); };
+                    actionsContainer.appendChild(btn);
+                });
+                showActions = true;
+            }
+
+            if (showActions) {
+                actionsContainer.style.display = 'flex';
+            } else {
+                actionsContainer.style.display = 'none';
+            }
+
+            const aBtn = document.getElementById('agariBtn');
+            if (data.can_win) {
+                currentScoreDetails = data.score_result; pointsDiffData = data;
+                if(aBtn) aBtn.style.display = 'block';
+            } else {
+                if(aBtn) aBtn.style.display = 'none';
+            }
+            if (data.is_already_riichi && !data.can_win && !showActions) { setTimeout(() => discardTile(tile), 800); }
+            isProcessing = false; 
+        }
+
+        function updateMachiDisplay(machiInfo) {
+            const display = document.getElementById('machiDisplay');
+            if (!machiInfo || machiInfo.length === 0) { display.innerText = ""; return; }
+            let text = "待ち: ";
+            let arr = machiInfo.map(info => `${info.tile.replace('赤','')}(${info.count}枚)`);
+            display.innerText = text + arr.join(', ');
+        }
+
+        function doRiichi() {
+            if (isSelectingRiichiTile) {
+                isSelectingRiichiTile = false;
+                document.getElementById('riichiBtn').innerText = "リーチ"; document.getElementById('riichiBtn').style.backgroundColor = "#9b59b6";
+                if (currentScoreDetails !== "") { document.getElementById('agariBtn').style.display = 'block'; }
+                const handTiles = document.getElementById('handTiles').children;
+                for (let tileEl of handTiles) { tileEl.classList.remove('not-riichi-tile'); tileEl.classList.remove('riichi-target-tile'); }
+                return;
+            }
+            isSelectingRiichiTile = true;
+            document.getElementById('riichiBtn').innerText = "やめる"; document.getElementById('riichiBtn').style.backgroundColor = "#7f8c8d";
+            document.getElementById('agariBtn').style.display = 'none'; 
+            const handTiles = document.getElementById('handTiles').children;
+            for (let tileEl of handTiles) {
+                let tileRaw = tileEl.getAttribute('data-raw');
+                if (!riichiDeclarableTiles.includes(tileRaw)) { tileEl.classList.add('not-riichi-tile'); }
+                else { tileEl.classList.add('riichi-target-tile'); }
+            }
+        }
+
+        function revealCpuHands(hands) {
+            if (!hands) return;
+            ['shimochi', 'toimen', 'kamicha'].forEach(cpu => {
+                const area = document.getElementById(`${cpu}Hand`);
+                if (!area || !hands[cpu]) return;
+                area.innerHTML = '';
+                hands[cpu].forEach(tileText => {
+                    const tile = createTileElement(tileText);
+                    area.appendChild(tile);
+                });
+            });
+        }
+
+        async function declareAgari(type) {
+            isGameOver = true;
+            document.getElementById('nakiBtnGroup').style.display = 'none';
+            const aBtn = document.getElementById('agariBtn'); if(aBtn) aBtn.style.display = 'none';
+            const rBtn = document.getElementById('riichiBtn'); if(rBtn) rBtn.style.display = 'none';
+            
+            if (pointsDiffData && pointsDiffData.cpu_hands) { revealCpuHands(pointsDiffData.cpu_hands); }
+            if (pointsDiffData && pointsDiffData.points_diff) { applyPointsDiff(pointsDiffData.points_diff); }
+
+            let title = document.getElementById('kyokuNameDisplay').innerText + ' ' + document.getElementById('honbaDisplay').innerText;
+            let text = `${type}アガリです！\n【${currentScoreDetails}】`;
+            addLogToModal(title, text);
+
+            let isGameEnd = checkTobi();
+            if (pointsDiffData && pointsDiffData.next_kyoku > 8) isGameEnd = true;
+
+            if (isGameEnd) {
+                setTimeout(() => {
+                    let msg = text;
+                    if (checkTobi()) msg += "\n\n持ち点が0以下になったため、とび終了です！";
+                    else msg += "\n\n半荘終了です！";
+                    alert(msg);
+                    showEndGameButton();
+                }, 300);
+            } else {
+                setTimeout(() => { 
+                    alert(text); 
+                    const nextBtn = document.getElementById('nextRoundBtn');
+                    nextBtn.innerText = "次の局へ";
+                    nextBtn.style.backgroundColor = "#27ae60";
+                    nextBtn.style.display = 'block';
+                    nextBtn.onclick = () => triggerNextRoundTransition(pointsDiffData.next_kyoku, pointsDiffData.next_honba, pointsDiffData.next_kyotaku, title, text);
+                }, 300);
+            }
+        }
+
+        async function declareNaki(action, tileText, patternStr="", sourceCpu="") {
+            const url = `/declare_naki/?action=${action}&tile=${encodeURIComponent(tileText)}&pattern=${encodeURIComponent(patternStr)}&source=${sourceCpu}`;
+            const response = await fetch(url);
+            const data = await response.json();
+
+            if (data.is_furiten) {
+                document.getElementById('furitenBadge').style.display = 'block';
+            } else if (data.is_furiten !== undefined) {
+                document.getElementById('furitenBadge').style.display = 'none';
+            }
+            
+            if (data.dora_indicators) {
+                doraIndicatorsRaw = data.dora_indicators;
+                currentDoraTiles = data.dora_tiles;
+                updateDoraIndicators(doraIndicatorsRaw, currentDoraTiles);
+            }
+            
+            if (data.source && data.source_discards) { renderDiscards(`${data.source}Discard`, data.source_discards, data.source_tsumogiri_flags); }
+            
+            const handTiles = document.getElementById('handTiles');
+            handTiles.innerHTML = '';
+            data.hand.forEach(t => {
+                const tile = createTileElement(t);
+                tile.onclick = function() { discardTile(this); };
+                handTiles.appendChild(tile);
+            });
+            sortHand();
+            
+            const furoArea = document.getElementById('jibunFuro');
+            furoArea.innerHTML = '';
+            data.furo.forEach(furoSet => {
+                const setDiv = document.createElement('div'); setDiv.className = 'furo-set';
+                let tiles = furoSet.tiles; let highlightIndex = -1;
+                
+                if (furoSet.action === 'ankan') {
+                    tiles.forEach((t, i) => {
+                        if (i === 0 || i === 3) {
+                            const tileEl = document.createElement('div');
+                            tileEl.className = 'furo-back-tile';
+                            setDiv.appendChild(tileEl);
+                        } else {
+                            setDiv.appendChild(createTileElement(t, true));
+                        }
+                    });
+                } else if (furoSet.action === 'kakan') {
+                    let renderTiles = [tiles[3], tiles[0], tiles[1], tiles[2]];
+                    renderTiles.forEach((t, i) => {
+                        if (i === 0) {
+                            const tileEl = document.createElement('div');
+                            tileEl.className = 'furo-back-tile';
+                            setDiv.appendChild(tileEl);
+                        } else {
+                            setDiv.appendChild(createTileElement(t, true));
+                        }
+                    });
+                } else if (furoSet.action === 'kan') {
+                    if (furoSet.source === 'kamicha') highlightIndex = 0;
+                    else if (furoSet.source === 'toimen') highlightIndex = 1;
+                    else if (furoSet.source === 'shimochi') highlightIndex = tiles.length - 1;
+                    
+                    tiles.forEach((t, i) => {
+                        if (i === highlightIndex) {
+                            const tileEl = document.createElement('div');
+                            tileEl.className = 'furo-back-tile highlight-furo';
+                            setDiv.appendChild(tileEl);
+                        } else {
+                            setDiv.appendChild(createTileElement(t, true));
+                        }
+                    });
+                } else {
+                    if (furoSet.source === 'kamicha') highlightIndex = 0;
+                    else if (furoSet.source === 'toimen') highlightIndex = 1;
+                    else if (furoSet.source === 'shimochi') highlightIndex = tiles.length - 1;
+                    
+                    if (furoSet.action === 'chi') { 
+                        tiles = [furoSet.called_tile, ...tiles.filter(t => t !== furoSet.called_tile)]; 
+                        highlightIndex = 0; 
+                    }
+                    tiles.forEach((t, i) => {
+                        const tileEl = createTileElement(t, true);
+                        if (i === highlightIndex) { tileEl.classList.add('highlight-furo'); }
+                        setDiv.appendChild(tileEl);
+                    });
+                }
+                furoArea.appendChild(setDiv);
+            });
+            updateMachiDisplay(data.machi_info);
+            hasTsumoed = true; isProcessing = false; 
+        }
+
+        function handleRyukyokuEnd(data) {
+            isGameOver = true; 
+            if (data && data.cpu_hands) { revealCpuHands(data.cpu_hands); }
+            if (data && data.points_diff) { applyPointsDiff(data.points_diff); }
+
+            let title = document.getElementById('kyokuNameDisplay').innerText + ' ' + document.getElementById('honbaDisplay').innerText;
+            let text = data.result_msg;
+            addLogToModal(title, text);
+
+            let isGameEnd = checkTobi();
+            if (data && data.next_kyoku > 8) isGameEnd = true;
+
+            if (isGameEnd) {
+                setTimeout(() => {
+                    let msg = text;
+                    if (checkTobi()) msg += "\n\n持ち点が0以下になったため、とび終了です！";
+                    else msg += "\n\n半荘終了です！";
+                    alert(msg);
+                    showEndGameButton();
+                }, 300);
+            } else {
+                setTimeout(() => { 
+                    alert(text); 
+                    const nextBtn = document.getElementById('nextRoundBtn');
+                    nextBtn.innerText = "次の局へ";
+                    nextBtn.style.backgroundColor = "#27ae60";
+                    nextBtn.style.display = 'block';
+                    nextBtn.onclick = () => triggerNextRoundTransition(data.next_kyoku, data.next_honba, data.next_kyotaku, title, text);
+                }, 300);
+            }
+        }
+
+        async function discardTile(tileElement) {
+            removeHighlightSameDiscards();
+            const discardedTileRaw = tileElement.getAttribute('data-raw');
+            const handTiles = document.getElementById('handTiles');
+            const isTsumogiri = (tileElement === handTiles.lastElementChild && hasTsumoed);
+            
+            if (isSelectingRiichiTile) {
+                if (!riichiDeclarableTiles.includes(discardedTileRaw)) return;
+                displayRiichiText('自分');
+                const riichiResp = await fetch('/declare_riichi/');
+                const riichiData = await riichiResp.json();
+                if (riichiData.current_kyotaku !== undefined) {
+                    document.getElementById('kyotakuDisplay').innerText = `供託${riichiData.current_kyotaku}本`;
+                }
+
+                isSelectingRiichiTile = false; isRiichi = true;
+                document.getElementById('riichiStick-jibun').style.display = 'block';
+                document.getElementById('handTiles').classList.add('riichi-mode');
+                
+                let myScoreDisplay = document.getElementById('score-jibun');
+                let curScore = parseInt(myScoreDisplay.innerText.replace(/[^0-9-]/g, ''));
+                let hasOya = myScoreDisplay.innerText.includes('東');
+                myScoreDisplay.innerText = `自分: ` + (hasOya ? '東 ' : '') + (curScore - 1000);
+                
+                for (let tileEl of handTiles.children) { tileEl.classList.remove('not-riichi-tile'); tileEl.classList.remove('riichi-target-tile'); }
+                const jibunDiscards = document.getElementById('jibunDiscard').children;
+                riichiIndex.jibun = jibunDiscards.length;
+            } else if (isRiichi) {
+                if (tileElement !== handTiles.lastElementChild) return;
+            }
+            if (!hasTsumoed || isGameOver || isProcessing) return; 
+            
+            isProcessing = true; hasTsumoed = false;
+            document.getElementById('nakiBtnGroup').style.display = 'none';
+            const aBtn = document.getElementById('agariBtn'); if(aBtn) aBtn.style.display = 'none';
+            const rBtn = document.getElementById('riichiBtn'); if(rBtn) rBtn.style.display = 'none';
+            if (tileElement.parentNode) { tileElement.parentNode.removeChild(tileElement); }
+            sortHand();
+
+            const response = await fetch(`/player_discard/?tile=${encodeURIComponent(discardedTileRaw)}&tsumogiri=${isTsumogiri}`);
+            const data = await response.json();
+
+            handlePostDiscardData(data, 'jibun');
+        }
+
+        function renderDiscards(elementId, discardList, tsumogiriFlags) {
+            const area = document.getElementById(elementId);
+            if (!area) return;
+            area.innerHTML = '';
+            let playerKey = 'jibun';
+            if (elementId === 'shimochiDiscard') playerKey = 'shimochi';
+            else if (elementId === 'toimenDiscard') playerKey = 'toimen';
+            else if (elementId === 'kamichaDiscard') playerKey = 'kamicha';
+
+            discardList.forEach((tileText, index) => {
+                const tile = createTileElement(tileText);
+                tile.className = tile.className.replace('tile ', 'discard-tile ');
+                if (tsumogiriFlags && tsumogiriFlags[index]) {
+                    tile.classList.add('tsumogiri');
+                }
+                tile.onmouseenter = null;
+                tile.onmouseleave = null;
+                if (index === riichiIndex[playerKey]) { tile.classList.add('riichi-discard'); }
+                const r = Math.floor(index / 6); const c = index % 6;             
+                if (elementId === 'jibunDiscard') { tile.style.left = `${5 + c * 26}px`; tile.style.top = `${4 + r * 36}px`; } 
+                else if (elementId === 'toimenDiscard') { tile.style.transform = 'rotate(180deg)'; tile.style.left = `${135 - c * 26}px`; tile.style.top = `${76 - r * 36}px`; } 
+                else if (elementId === 'shimochiDiscard') { tile.style.transform = 'rotate(-90deg)'; tile.style.left = `${9 + r * 36}px`; tile.style.top = `${130 - c * 26}px`; } 
+                else if (elementId === 'kamichaDiscard') { tile.style.transform = 'rotate(90deg)'; tile.style.left = `${81 - r * 36}px`; tile.style.top = `${c * 26}px`; }
+                area.appendChild(tile);
+            });
+        }
+
+        function sortHand() {
+            const handTiles = document.getElementById('handTiles');
+            if (!handTiles) return;
+            const tiles = Array.from(handTiles.children);
+            tiles.sort((a, b) => {
+                const rawA = a.getAttribute('data-raw') || a.textContent;
+                const rawB = b.getAttribute('data-raw') || b.textContent;
+                const aNorm = rawA.replace('赤', '').trim();
+                const bNorm = rawB.replace('赤', '').trim();
+                const aIdx = tilesOrder.indexOf(aNorm);
+                const bIdx = tilesOrder.indexOf(bNorm);
+                
+                if (aIdx === bIdx) {
+                    const aIsAka = rawA.includes('赤');
+                    const bIsAka = rawB.includes('赤');
+                    return aIsAka === bIsAka ? 0 : aIsAka ? -1 : 1;
+                }
+                return aIdx - bIdx;
+            });
+            handTiles.innerHTML = '';
+            tiles.forEach(tile => handTiles.appendChild(tile));
+        }
+        
+    </script>  
+</body>
+</html>

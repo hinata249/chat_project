@@ -15,10 +15,10 @@ SECRET_KEY = 'django-insecure-5$&4ac*&hrm!@iahppj+0k91kj$7)7e92ziutzmpdc$vfviz_n
 
 DEBUG = True
 
-# ⭕ 他のパソコンやスマホからのアクセスをすべて許可します
+# 他のパソコンやスマホからのアクセスをすべて許可します
 ALLOWED_HOSTS = ['*']
 
-# ⭕ Serveo経由でのログインやアカウント送信（CSRFセキュリティ）をすべて許可します
+#Serveo経由でのログインやアカウント送信（CSRFセキュリティ）をすべて許可します
 CSRF_TRUSTED_ORIGINS = ['https://*.serveousercontent.com', 'https://*.serveo.net']
 
 # アプリケーション定義
@@ -48,11 +48,11 @@ ROOT_URLCONF = 'my_chat_project.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'], # ⭕ プロジェクト直下の templates フォルダを探しに行く設定に修正
+        'DIRS': [BASE_DIR / 'templates'], #プロジェクト直下の templates フォルダを探しに行く設定に修正
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
-                'django.template.context_processors.debug', # ⭕ デバッグ用の設定を復旧
+                'django.template.context_processors.debug', #デバッグ用の設定を復旧
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
@@ -74,7 +74,7 @@ DATABASES = {
 # パスワードバリデーション（研修のテスト用として登録しやすいようにチェックを無効化しています）
 AUTH_PASSWORD_VALIDATORS = []
 
-# 国際化設定（⭕ 日本語・日本時間に設定を修正）
+# 日本語・日本時間に設定を修正
 LANGUAGE_CODE = 'ja'
 TIME_ZONE = 'Asia/Tokyo'
 USE_I18N = True

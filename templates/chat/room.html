@@ -31,10 +31,10 @@
 
             現在のユーザー: 
             <!-- プロフィールやログアウトへのリンクも、エラー防止のため一時的にすべて「#」に統一します -->
-            <a href="{% url 'my_profile' %}" id="current-user" data-user-id="{{ request.user.id }}" onclick="location.href='/profile/'" style="color: #60a5fa; font-weight: bold; text-decoration: none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">
+            <a href="#" id="current-user" data-user-id="{{ request.user.id }}" onclick="location.href='/profile/'" style="color: #60a5fa; font-weight: bold; text-decoration: none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">
     {{ user.profile.nickname|default:user.username }}
             </a>
-            <form action="{% url 'logout' %}" method="post" style="display:inline;">
+            <form action="#" method="post" style="display:inline;">
                 {% csrf_token %}
                 <button type="submit" class="logout-btn">ログアウト</button>
             </form>
@@ -92,7 +92,7 @@
         <!-- 【修正後：新しく作成したモーダル（ポップアップ）を開く処理に変更しました】 -->
             <a href="#" class="nav-btn btn-search-user" onclick="openUserSearchModal(); return false;">🔍 人を探す</a>
             <a href="#" class="nav-btn btn-search-post" onclick="openSearchModal(); return false;">📝 投稿を探す</a>
-            <a href="#" class="nav-btn btn-game">🎮 ミニゲーム</a>
+            <a href="#" class="nav-btn btn-game" onclick="openMinigameModal(); return false;">🎮 ミニゲーム</a>
         </div>
     </div>
 
@@ -114,5 +114,48 @@
         </div>
     </div>
 
+    <div id="minigame-modal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000;">
+        <div class="modal-content" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 8px; width: 90%; max-width: 500px;">
+            <div class="modal-header">
+                <h2 style="margin: 0;">🎮 ミニゲームメニュー</h2>
+                <button class="modal-close" onclick="closeMinigameModal()" style="cursor: pointer; border: none; background: none; font-size: 1.5rem;">&times;</button>
+            </div>
+                <div class="modal-body">
+                
+                    <div style="background-color: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <h3 style="margin-top: 0; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px;">🏆 ランキング(2026年7月2日時点)</h3>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span>🥇 1位：<a href="/profile/5/" style="color: #3b82f6; text-decoration: none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">mayukichi</a></span>
+                            <span style="color: #ea580c;">100 Pt</span>
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                            <span>🥈 2位：<a href="/profile/1/" style="color: #3b82f6; text-decoration: none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">muscle</a></span>
+                            <span style="color: #ea580c;">80 Pt</span>
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>🥉 3位：<a href="/profile/2/" style="color: #3b82f6; text-decoration: none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">matsumoto</a></span>
+                            <span style="color: #ea580c;">50 Pt</span>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; justify-content: center;">
+                        <a href="#" style="display: block; padding: 15px 30px; background-color: #3b82f6; color: white; text-decoration: none; border-radius: 8px; width: 100%; text-align: center;">🃏 トランプ</a>
+                        <a href="/minigames/mahjong/" style="display: block; padding: 15px 30px; background-color: #10b981; color: white; text-decoration: none; border-radius: 8px; width: 100%; text-align: center;">🀄 麻雀</a>
+                    </div>
+                </div>
+        </div>
+    </div>
+
+    <script>
+        function openMinigameModal() {
+            document.getElementById('minigame-modal').style.display = 'block';
+        }
+
+        function closeMinigameModal() {
+            document.getElementById('minigame-modal').style.display = 'none';
+        }
+    </script>
 </body>
 </html>
