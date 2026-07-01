@@ -29,6 +29,7 @@ urlpatterns = [
     path('edit_message', chat_views.edit_message, name='edit_message'),
     path('react_message', chat_views.react_message, name='react_message'),
     path('search_posts', chat_views.search_posts, name='search_posts'), 
+    path('get_reaction_users/', views.get_reaction_users, name='get_reaction_users'),
 
     # 新しいプロフィール画面用のURL（accountアプリのviewsに繋ぎます）
     path('profile/', account_views.edit_profile, name='my_profile'),

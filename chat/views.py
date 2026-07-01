@@ -42,7 +42,8 @@ def send_message(request):
             time=time_str,
             parent=parent_msg,
             image=uploaded_image,
-            video=uploaded_video
+            video=uploaded_video,
+            user_id=request.user.id
         )
 
         if parent_msg:
@@ -90,11 +91,11 @@ def react_message(request):
         if react_type in ['confirm', 'agree', 'review', 'review2', 'review3']:
             try:
                 msg = ChatMessage.objects.get(id=msg_id)
-                existing_react = MessageReaction.objects.filter(message=msg, username=username, react_type=react_type)
+                existing_react = MessageReaction.objects.filter(message=msg, user_id=request.user.id, react_type=react_type)
                 if existing_react.exists():
                     existing_react.delete()
                 else:
-                    MessageReaction.objects.create(message=msg, username=username, react_type=react_type)
+                    MessageReaction.objects.create(message=msg,username=username, user_id=request.user.id, react_type=react_type)
 
                     try:
                         target_user = User.objects.get(username=msg.username)
@@ -109,10 +110,47 @@ def react_message(request):
                     except Exception:
                         pass  # 投稿ユーザーが見つからない等の例外時は処理をスキップ
 
-                return JsonResponse({'status': 'success'})
+                all_reactions = MessageReaction.objects.filter(message=msg)
+                
+                # JavaScript側が期待する初期構造を定義
+                react_data = {
+                    'confirm': {'count': 0, 'users': []},
+                    'agree': {'count': 0, 'users': []},
+                    'review': {'count': 0, 'users': []},
+                    'review2': {'count': 0, 'users': []},
+                    'review3': {'count': 0, 'users': []},
+                }
+                
+                # ユーザーのニックネームを効率よく引くためのキャッシュ用辞書
+                user_display_names = {}
+
+                for r in all_reactions:
+                    if r.react_type in react_data:
+                        # 表示名（ニックネームがあれば優先、なければusername）を特定する処理
+                        if r.user_id not in user_display_names:
+                            try:
+                                u = User.objects.get(id=r.user_id)
+                                # 最初のHTMLコードにあった「user.profile.nickname」の規則に合わせます
+                                display_name = getattr(u.profile, 'nickname', '')
+                            except Exception:
+                                display_name = r.username
+                            user_display_names[r.username] = display_name
+                        
+                        # データを格納
+                        react_data[r.react_type]['count'] += 1
+                        react_data[r.react_type]['users'].append(user_display_names[r.username])
+
+                # 成功ステータスと一緒に、メッセージIDと成形したリアクションデータを返す
+                return JsonResponse({
+                    'status': 'success',
+                    'id': msg.id,
+                    'reactions': react_data
+                })
+            
+
             except ChatMessage.DoesNotExist:
                 pass
-    return JsonResponse({'status': 'failed'}, status=400)
+    return JsonResponse({'status': 'failed'}, status=400)             
 
 
 from django.contrib.auth.models import User
@@ -147,7 +185,8 @@ def get_messages(request):
         # 発言ユーザーのプロフィールアイコンの取得処理
         icon_url = ""
         try:
-            target_user = User.objects.get(username=m.username)
+            target_user = User.objects.get(id = m.user_id)
+            # target_user = User.objects.get(username=m.username)
             profile, _ = Profile.objects.get_or_create(user=target_user)
             if profile and profile.icon and hasattr(profile.icon, 'url'):
                 icon_url = profile.icon.url
@@ -369,6 +408,39 @@ def search_users(request):
         })
         
     return JsonResponse({'users': user_list})
+
+# === views.py の末尾に新しく追加します ===
+from django.http import JsonResponse
+from .models import MessageReaction # models.pyから読み込み
+from django.contrib.auth.models import User
+
+def get_reaction_users(request):
+    msg_id = request.GET.get('msg_id')
+    react_type = request.GET.get('type')
+    
+    reactions = MessageReaction.objects.filter(message_id=msg_id, react_type=react_type)
+    
+    users_list = []
+    for r in reactions:
+        display_name = r.username
+        icon_url = ""  # 一旦空文字にしておきます
+        
+        try:
+            u = User.objects.get(id=r.user_id)
+            display_name = getattr(u.profile, 'nickname', '') or u.username
+            
+            # 以前送っていただいた get_messages 関数のアイコン取得ロジックと完全に同じ記述に統一します
+            if hasattr(u, 'profile') and u.profile and hasattr(u.profile, 'icon') and u.profile.icon and hasattr(u.profile.icon, 'url'):
+                icon_url = u.profile.icon.url
+        except Exception:
+            pass
+            
+        users_list.append({
+            'name': display_name,
+            'icon_url': icon_url
+        })
+        
+    return JsonResponse({'users': users_list})
 
 # ミニゲーム
 

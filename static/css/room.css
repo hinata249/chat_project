@@ -1,25 +1,37 @@
 /* ==========================================================================
-   1. 全体のスタイル設定
+   1. 全体のスタイル設定 (Threads 漆黒デザインシステム)
    ========================================================================== */
+:root {
+    --bg-main: #18181c;            /* 💡 真っ黒から、目に優しい深みのあるチャコールグレーへ */
+    --bg-surface: #222226;         /* 💡 メッセージ枠は、少し明るい上品なダークグレーに */
+    --bg-bubble: #2d2d34;          /* 💡 ボタンのホバー時は、認識しやすい明るさに調整 */
+    --border-color: #2f2f35;       /* 💡 境界線も少し明るくし、枠線をハッキリ見えるように */
+    --text-primary: #f1f5f9;       /* 💡 メインの文字（パキッとした白から、少し温かみのある白へ） */
+    --text-secondary: #94a3b8;     /* 💡 補足の文字（暗すぎたグレーを明るめのスチールグレーへ） */
+    --accent-color: #38bdf8;       /* 💡 リンク色を少し明るいスカイブルーに変更して視認性アップ */
+    --error-color: #f87171;        /* 💡 通知の赤バッジも少しマイルドな赤へ */
+    --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
 body { 
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+    font-family: var(--font-stack); 
     margin: 0; 
     padding: 0; 
-    color: #1e293b; 
+    color: var(--text-primary); 
     font-size: 14px; 
-    background-color: #e2e8f0; /* 全体の背景を少し濃いグレーにして、チャット枠を引き立てる */
+    background-color: var(--bg-main); /* 背景をThreadsのブラックに */
     display: flex;
     flex-direction: column;
     height: 100vh;
-    align-items: center; /* チャット画面をパソコンの「真ん中」に寄せる */
+    align-items: center; 
 }
 
-/* 💡 【最重要】チャットアプリ全体が横に広がりすぎないように最大幅をガードする設定 */
+/* 💡 チャットアプリ全体が横に広がりすぎないように最大幅をガードする設定 */
 .chat-header,
 #chat-box,
 .bottom-area {
     width: 100%;
-    max-width: 768px; /* パソコン画面でもスマホやタブレットと同じ見やすい横幅に制限 */
+    max-width: 620px; /* Threadsのタイムラインに最適な、よりスマートな横幅に調整 */
     box-sizing: border-box;
 }
 
@@ -27,17 +39,19 @@ body {
    2. 上部のヘッダーバー
    ========================================================================== */
 .chat-header { 
-    background-color: #0f172a; 
-    color: white; 
+    background-color: rgba(10, 10, 10, 0.85); /* 背景を透過させて磨りガラス効果に */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: var(--text-primary); 
     padding: 14px 20px; 
     display: flex; 
     justify-content: space-between; 
     align-items: center; 
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    z-index: 10;
+    border-bottom: 1px solid var(--border-color); /* 太い影を排除し、シャープな線に */
+    z-index: 100;
 }
-.chat-title { font-size: 16px; font-weight: bold; margin: 0; }
-.user-status { font-size: 12px; display: flex; align-items: center; gap: 10px; }
+.chat-title { font-size: 16px; font-weight: 800; letter-spacing: -0.02em; margin: 0; }
+.user-status { font-size: 12px; display: flex; align-items: center; gap: 12px; color: var(--text-secondary); }
 
 
 /* ==========================================================================
@@ -46,194 +60,218 @@ body {
 #chat-box { 
     flex: 1;
     overflow-y: auto; 
-    padding: 24px; 
-    background: #ffffff; 
+    padding: 20px 16px; 
+    background: var(--bg-main); /* 背景をメインの黒に統一 */
     display: flex; 
     flex-direction: column; 
-    gap: 20px; 
+    gap: 16px; 
+    margin-top: 55px; /* ヘッダーに被らないよう調整 */
 }
 
 .msg-wrapper { display: flex; flex-direction: column; width: 100%; }
 
-/* 親メッセージ（トピックの始まり）の枠の色と背景を目立たせる */
+/* 親メッセージ（トピックの始まり）の枠 */
 .msg-container { 
     display: flex; 
     flex-direction: column; 
     width: 100%; 
     max-width: 100%; 
-    padding: 14px 18px;
-    background-color: #f8fafc; /* 親だけ薄い上品なブルーグレー */
-    border: 2px solid #cbd5e1; /* 親だけ枠線を少し太く、ハッキリした色に */
-    border-radius: 8px;
+    padding: 16px;
+    background-color: var(--bg-surface); /* わずかに明るい黒で浮き上がらせる */
+    border: 1px solid var(--border-color); /* スタイリッシュで細い枠線に変更 */
+    border-radius: 16px; /* 角丸を滑らかにしてモダンに */
     box-sizing: border-box;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.02);
 }
 
 /* ユーザー名と時間のヘッダー */
-.msg-header-info { display: flex; gap: 10px; align-items: center; margin-bottom: 6px; font-size: 12px; }
-.msg-username { font-weight: bold; color: #1e3a8a; }
-.msg-time { color: #64748b; font-size: 11px; }
-
-.action-link { color: #2563eb; text-decoration: none; cursor: pointer; font-size: 11px; margin-left: 8px; font-weight: 500; }
-.action-link:hover { text-decoration: underline; }
-
-.msg-text { padding: 2px 0; font-size: 14px; color: #334155; word-break: break-all; line-height: 1.6; white-space: pre-wrap; }
-.msg-media { 
-    margin-top: 8px; 
-    width: 100%; 
-    max-width: 400px;      /* 横幅が広がりすぎないように最大幅を制限 */
-    height: auto;          /* 縦横比を崩さず、横幅に合わせて自動調整する */
-    object-fit: contain;   /* 枠の中に綺麗に画像を収める指定 */
-    border-radius: 6px; 
-    display: block; 
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1); 
+.msg-header-info { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; font-size: 13px; }
+.msg-username { 
+    font-weight: 800;          
+    color: #ffffff !important; /* 💡 真っ黒な背景に映える、純粋な「白」にします */
+    font-size: 13px;           /* 💡 文字を大きくして視認性をアップ */
 }
-img.msg-media { cursor: pointer; }
+.msg-time { color: var(--text-secondary); font-size: 12px; }
+
+.action-link { color: var(--accent-color); text-decoration: none; cursor: pointer; font-size: 12px; margin-left: 8px; font-weight: 600; }
+.action-link:hover { opacity: 0.8; text-decoration: none; }
+
+.msg-text { padding: 2px 0; font-size: 14.5px; color: #e1e1e1; word-break: break-all; line-height: 1.5; white-space: pre-wrap; }
+
+/* 添付メディア（画像・動画） */
+.msg-media { 
+    margin-top: 10px; 
+    width: 100%; 
+    max-width: 450px;      
+    height: auto;          
+    object-fit: contain;   
+    border-radius: 12px; /* メディアの角丸もスムーズに */
+    display: block; 
+    border: 1px solid var(--border-color);
+}
+img.msg-media { cursor: pointer; transition: opacity 0.2s; }
+img.msg-media:hover { opacity: 0.9; }
 video.msg-media { background: #000; }
 
-/* リアクションボタン */
-.reaction-bar { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
-.react-btn { padding: 3px 8px; border: 1px solid #e2e8f0; background: #ffffff; border-radius: 6px; font-size: 11px; cursor: pointer; color: #475569; display: flex; align-items: center; gap: 4px; }
-.react-btn:hover { background: #f1f5f9; border-color: #cbd5e1; }
-
+/* リアクションボタンバー */
+.reaction-bar { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+.react-btn { 
+    padding: 5px 10px; 
+    border: 1px solid var(--border-color); 
+    background: var(--bg-surface); 
+    border-radius: 20px; /* カプセル型の形状にしてThreadsらしさを強調 */
+    font-size: 12px; 
+    cursor: pointer; 
+    color: var(--text-primary); 
+    display: flex; 
+    align-items: center; 
+    gap: 4px; 
+    transition: background 0.2s, border-color 0.2s;
+}
+.react-btn:hover { background: var(--bg-bubble); border-color: var(--text-secondary); }
 /* ==========================================================================
-   4. 返信スレッド & トグル
+   4. 返信スレッド & トグル (Threadsの会話ラインを再現)
    ========================================================================== */
 .reply-box { 
-    margin-top: 10px; 
+    margin-top: 12px; 
     gap: 12px; 
     display: flex; 
     flex-direction: column; 
     width: 100%; 
-    border-left: 3px solid #3b82f6; /* スレッドの接続線を鮮やかな青に */
-    padding-left: 16px; 
+    border-left: 2px solid var(--border-color); /* 青い太線を廃止、本家同様の極細グレーの接続線へ */
+    padding-left: 18px; 
     box-sizing: border-box;
 }
 
-/* 返信（子・孫）メッセージは、親の枠色がつかないように完全に打ち消す */
+/* 返信メッセージのコンテナ調整 */
 .reply-box .msg-container { 
     border: none !important; 
-    padding: 4px 0 !important; 
+    padding: 2px 0 !important; 
     box-shadow: none !important;
-    background-color: transparent !important; /* 返信は背景なしのシンプルに */
+    background-color: transparent !important; 
 }
-.reply-box .msg-username { color: #475569; }
-
-/* 「返信をしまう・広げる」トグルボタンのデザイン */
+.reply-box .msg-username { 
+    font-weight: 800;
+    color: #ffffff !important; /* 💡 返信スレッド内の名前も、グレーからクッキリした「白」へ */
+}
+/* 「返信をしまう・広げる」トグルボタン */
 .thread-toggle-btn {
-    background: #f1f5f9;
-    border: 1px solid #e2e8f0;
-    color: #475569;
-    padding: 4px 10px;
-    font-size: 11px;
-    font-weight: bold;
-    border-radius: 4px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 6px 12px;
+    font-size: 11.5px;
+    font-weight: 600;
+    border-radius: 20px; /* カプセル型にしてスタイリッシュに */
     cursor: pointer;
     width: fit-content;
-    margin-top: 8px;
+    margin-top: 6px;
     display: flex;
     align-items: center;
     gap: 4px;
+    transition: background 0.2s, color 0.2s;
 }
 .thread-toggle-btn:hover {
-    background: #e2e8f0;
-    color: #1e293b;
+    background: var(--bg-bubble);
+    color: var(--text-primary);
 }
 
-/* 配信動画（YouTubeなど）の埋め込みプレイヤーのサイズ調整 */
+/* 埋め込みプレイヤー */
 .msg-embed-video {
-    margin-top: 8px;
+    margin-top: 10px;
     width: 100%;
-    max-width: 480px;  /* プレイヤーの最大横幅 */
-    aspect-ratio: 16 / 9; /* 横長比率を固定 */
-    border: none;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    max-width: 480px;  
+    aspect-ratio: 16 / 9; 
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
     display: block;
 }
 
 /* ==========================================================================
-   5. 下部入力エリアの固定構造
+   5. 下部入力エリアの固定構造 (フッター一体型)
    ========================================================================== */
-/* 入力エリア全体を画面の下部に白背景で固定配置する */
 .bottom-area { 
-    background: #ffffff; 
-    border-top: 1px solid #e2e8f0; 
-    padding: 16px 24px; 
+    background-color: rgba(10, 10, 10, 0.9); /* 白背景を廃止、磨りガラス効果のダーク背景へ */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid var(--border-color); 
+    padding: 12px 16px; 
     box-sizing: border-box;
+    position: fixed;
+    bottom: 0;
 }
 
-/* 返信先のバー */
+/* 返信先バナー（Threads風の警告・案内カラー） */
 #reply-target-banner { 
-    background: #fef2f2; 
-    border: 1px solid #fee2e2; 
-    padding: 8px 16px; 
+    background: #1a1111; /* 赤みを極限まで抑えたダークなボルドーグレー */
+    border: 1px solid #3a1e1e; 
+    padding: 8px 14px; 
     font-size: 12px; 
-    border-radius: 6px; 
-    margin-bottom: 10px; 
+    border-radius: 10px; 
+    margin-bottom: 8px; 
     display: flex; 
     justify-content: space-between; 
     align-items: center; 
-    color: #991b1b; 
+    color: #fca5a5; 
 }
-
 /* 横並びにするフォーム本体 */
 #chat-form { 
     display: flex; 
-    gap: 12px; 
+    gap: 10px; 
     align-items: flex-end; 
     width: 100%;
     box-sizing: border-box;
 }
 
-/* テキスト入力エリア（文字数に合わせて自動で広がるように修正） */
+/* テキスト入力エリア */
 #message-input { 
     flex: 1; 
     min-height: 44px; 
     max-height: 150px; 
     height: 44px; 
     padding: 12px 16px; 
-    border: 1px solid #cbd5e1; 
-    border-radius: 8px; 
-    font-size: 13px; 
+    border: 1px solid var(--border-color); 
+    border-radius: 12px; /* 少し丸みを強めてモダンに */
+    font-size: 13.5px; 
     font-family: inherit; 
     box-sizing: border-box; 
     resize: none; 
     outline: none; 
-    background: #fff; 
-    transition: border 0.2s; 
+    background: var(--bg-surface); /* サーフェスダーク（#121212）を適用 */
+    color: var(--text-primary); 
+    transition: border-color 0.2s; 
     overflow-y: auto; 
 }
 
 #message-input:focus { 
-    border-color: #2563eb; 
-    box-shadow: 0 0 0 2px rgba(37,99,235,0.1); 
+    border-color: var(--text-secondary); /* 目立ちすぎないスマートなフォーカス線 */
 }
 
 /* クリップ（添付）ボタン */
 .file-upload-btn { 
-    background: #f1f5f9; 
-    border: 1px solid #cbd5e1; 
+    background: var(--bg-surface); 
+    border: 1px solid var(--border-color); 
     width: 44px; 
     height: 44px; 
-    border-radius: 8px; 
+    border-radius: 12px; 
     cursor: pointer; 
     display: flex; 
     align-items: center; 
     justify-content: center; 
     font-size: 18px; 
-    color: #475569; 
+    color: var(--text-secondary); 
     transition: all 0.2s; 
     box-sizing: border-box; 
-    flex-shrink: 0; /* ボタンが潰れるのを防ぐ */
+    flex-shrink: 0; 
 }
 .file-upload-btn:hover { 
-    background: #e2e8f0; 
+    background: var(--bg-bubble); 
+    color: var(--text-primary);
 }
+/* 📎ファイル選択中のスタイル（本家準拠の鮮やかなソリッドカラー） */
 .file-upload-btn.selected { 
-    background: #2563eb; 
+    background: var(--accent-color); 
     color: white; 
-    border-color: #2563eb; 
+    border-color: var(--accent-color); 
 }
 
 /* 投稿ボタンとヒントを囲む右側のブロック */
@@ -242,30 +280,30 @@ video.msg-media { background: #000; }
     flex-direction: column; 
     align-items: flex-end; 
     gap: 4px; 
-    flex-shrink: 0; /* ボタンが潰れるのを防ぐ */
+    flex-shrink: 0; 
 }
 
-/* 投稿ボタン（高さを44pxに固定） */
+/* 投稿ボタン */
 .submit-btn { 
     padding: 0 24px; 
     height: 44px; 
-    background: #2563eb; 
-    color: white; 
+    background: var(--text-primary); /* 反転した白（極薄グレー）をボタン色に */
+    color: var(--bg-main); /* 文字を黒に */
     border: none; 
-    border-radius: 8px; 
+    border-radius: 12px; 
     cursor: pointer; 
-    font-size: 13px; 
-    font-weight: bold; 
-    transition: background 0.2s; 
+    font-size: 13.5px; 
+    font-weight: 700; 
+    transition: opacity 0.2s; 
     box-sizing: border-box;
 }
 .submit-btn:hover { 
-    background: #1d4ed8; 
+    opacity: 0.9; 
 }
 
 /* 注意書きのテキスト */
 .hint-text { 
-    color: #94a3b8; 
+    color: var(--text-secondary); 
     font-size: 10px; 
 }
 
@@ -278,6 +316,20 @@ video.msg-media { background: #000; }
     text-decoration: underline; 
     cursor: pointer; 
     font-size: 12px; 
+}
+.logout-btn:hover { 
+    opacity: 1; 
+}
+/* ログアウトボタン */
+.logout-btn { 
+    background: none; 
+    border: none; 
+    color: var(--text-primary); 
+    opacity: 0.6; 
+    text-decoration: underline; 
+    cursor: pointer; 
+    font-size: 12px; 
+    transition: opacity 0.2s;
 }
 .logout-btn:hover { 
     opacity: 1; 
@@ -299,16 +351,16 @@ video.msg-media { background: #000; }
     border-radius: 50%;
     object-fit: cover;
     display: block;
-    border: 1px solid #475569;
+    border: 1px solid var(--border-color); /* シャープな境界線 */
 }
 .header-avatar-default {
     width: 28px;
     height: 28px;
     border-radius: 50%;
-    background: #334155;
-    color: #cbd5e1;
+    background: var(--bg-surface);
+    color: var(--text-secondary);
     text-align: center;
-    line-height: 26px;
+    line-height: 28px;
     font-size: 14px;
     display: block;
     box-sizing: border-box;
@@ -317,7 +369,7 @@ video.msg-media { background: #000; }
 /* ナビゲーションボタンを並べる行 */
 .nav-button-row {
     display: flex;
-    gap: 12px;
+    gap: 10px;
     margin-top: 14px;
     width: 100%;
     box-sizing: border-box;
@@ -329,45 +381,45 @@ video.msg-media { background: #000; }
     text-align: center;
     padding: 10px 0;
     font-size: 13px;
-    font-weight: bold;
+    font-weight: 700; /* 太文字でよりモダンに */
     text-decoration: none;
-    border-radius: 6px;
+    border-radius: 12px; /* カプセル型に馴染むよう角丸を調整 */
     transition: background-color 0.2s, transform 0.1s;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    box-shadow: none; /* 古い立体的な影を排除 */
 }
 
 .nav-btn:active {
     transform: scale(0.98);
 }
 
-/* ボタン個別の色分け（お好みの色に変えられます） */
+/* 💡 Threadsスタイルに色合いを統合：全てダークサーフェスでミニマルに統一 */
 .btn-search-user {
-    background-color: #f1f5f9;
-    color: #334155;
-    border: 1px solid #cbd5e1;
+    background-color: var(--bg-surface);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
 }
 .btn-search-user:hover {
-    background-color: #e2e8f0;
+    background-color: var(--bg-bubble);
 }
 
 .btn-search-post {
-    background-color: #f1f5f9;
-    color: #334155;
-    border: 1px solid #cbd5e1;
+    background-color: var(--bg-surface);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
 }
 .btn-search-post:hover {
-    background-color: #e2e8f0;
+    background-color: var(--bg-bubble);
 }
 
+/* ゲームボタンも浮かないように統一感を持たせ、文字色だけにアクセントを配置 */
 .btn-game {
-    background-color: #ffedd5; /* 薄いオレンジ */
-    color: #ea580c;
-    border: 1px solid #fed7aa;
+    background-color: var(--bg-surface); 
+    color: #fb923c; /* Threadsの差し色に合うネオン系のオレンジ文字にシフト */
+    border: 1px solid var(--border-color);
 }
 .btn-game:hover {
-    background-color: #fed7aa;
+    background-color: var(--bg-bubble);
 }
-
 /* ==========================================================================
    追加機能：メッセージ内アバター（アイコン）表示スタイル
    ========================================================================== */
@@ -382,21 +434,22 @@ video.msg-media { background: #000; }
     border-radius: 50%;
     object-fit: cover;
     display: block;
-    border: 1px solid #cbd5e1;
+    border: 1px solid var(--border-color); /* 境界線をシャープなグレーに変更 */
 }
 /* アイコン未設定時のデフォルトの見た目 */
 .msg-avatar-default {
     width: 24px;
     height: 24px;
     border-radius: 50%;
-    background: #e2e8f0;
-    color: #64748b;
+    background: var(--bg-surface); /* 背景をダークサーフェスに */
+    color: var(--text-secondary); /* 文字を落ち着いたグレーに */
     text-align: center;
     line-height: 24px;
     font-size: 12px;
     display: block;
     box-sizing: border-box;
 }
+
 /* ==========================================================================
    追加機能：ヘッダー通知ベルマークボタンのスタイル
    ========================================================================== */
@@ -405,16 +458,16 @@ video.msg-media { background: #000; }
 .notification-btn {
     position: relative;
     display: inline-block;
-    font-size: 18px; /* ベルの大きさ */
+    font-size: 18px; 
     text-decoration: none;
     cursor: pointer;
     vertical-align: middle;
-    margin-right: 12px; /* プロフィール写真との隙間 */
-    transition: transform 0.1s;
+    margin-right: 12px; 
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* より滑らかな動きに */
 }
 
 .notification-btn:hover {
-    transform: scale(1.1); /* ホバー時に少し大きくする効果 */
+    transform: scale(1.1); 
 }
 
 /* 通知の件数を表す赤い数字バッジ */
@@ -422,23 +475,22 @@ video.msg-media { background: #000; }
     position: absolute;
     top: -4px;
     right: -6px;
-    background-color: #ef4444; /* 鮮やかな赤色 */
+    background-color: var(--error-color); /* 本家準拠のシグナルレッド */
     color: #ffffff;
-    font-size: 10px;
-    font-weight: bold;
+    font-size: 9px;
+    font-weight: 700;
     min-width: 14px;
     height: 14px;
-    border-radius: 7px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0 4px;
+    padding: 0 3px;
     box-sizing: border-box;
-    border: 1px solid #0f172a; /* ヘッダーの背景色となじませる枠線 */
+    border: 1.5px solid #0a0a0a; /* 💡 変更：ヘッダーの新しい背景色（黒）に合わせて枠線を修正 */
 }
-
 /* ==========================================================================
-   検索モーダルのスタイル
+   検索モーダルのスタイル (Threads ダイアログデザイン)
    ========================================================================== */
 .modal {
     display: flex;
@@ -448,17 +500,20 @@ video.msg-media { background: #000; }
     top: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.7); /* 少し暗めにして背景の磨りガラスを引き立てる */
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
     align-items: center;
     justify-content: center;
 }
 
 .modal-content {
-    background-color: #ffffff;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    background-color: var(--bg-surface); /* サーフェスダーク（#121212）に変更 */
+    border: 1px solid var(--border-color);
+    border-radius: 24px; /* Threadsらしい丸みの強い角丸に */
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
     width: 90%;
-    max-width: 600px;
+    max-width: 550px;
     max-height: 80vh;
     display: flex;
     flex-direction: column;
@@ -469,15 +524,16 @@ video.msg-media { background: #000; }
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20px;
-    border-bottom: 1px solid #e2e8f0;
-    background-color: #f8fafc;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border-color);
+    background-color: var(--bg-surface);
 }
 
 .modal-header h2 {
     margin: 0;
     font-size: 18px;
-    color: #0f172a;
+    font-weight: 800; /* より力強い太字へ */
+    color: var(--text-primary);
 }
 
 .modal-close {
@@ -485,57 +541,61 @@ video.msg-media { background: #000; }
     border: none;
     font-size: 28px;
     cursor: pointer;
-    color: #64748b;
+    color: var(--text-secondary);
     transition: color 0.2s;
 }
 
 .modal-close:hover {
-    color: #0f172a;
+    color: var(--text-primary);
 }
 
 .modal-body {
-    padding: 20px;
+    padding: 24px;
     overflow-y: auto;
     flex: 1;
 }
 
+/* 検索入力欄 */
 .search-input {
     width: 100%;
-    padding: 12px;
+    padding: 12px 16px;
     font-size: 14px;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
+    background-color: var(--bg-main); /* 入力フィールド内はジェットブラック */
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
     margin-bottom: 12px;
     box-sizing: border-box;
     transition: border-color 0.2s;
+    outline: none;
 }
 
 .search-input:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    border-color: var(--text-secondary); /* 青い光を無くし、ソリッドに */
+    box-shadow: none;
 }
 
+/* 検索ボタン */
 .search-btn {
     width: 100%;
     padding: 12px;
-    background-color: #3b82f6;
-    color: white;
+    background-color: var(--text-primary); /* 反転したソリッドホワイトボタン */
+    color: var(--bg-main);
     border: none;
-    border-radius: 8px;
+    border-radius: 12px;
     font-size: 14px;
-    font-weight: bold;
+    font-weight: 700;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: opacity 0.2s;
     margin-bottom: 20px;
 }
 
 .search-btn:hover {
-    background-color: #2563eb;
+    opacity: 0.9;
 }
 
 .search-btn:active {
-    background-color: #1d4ed8;
+    opacity: 0.8;
 }
 
 .search-results {
@@ -548,20 +608,21 @@ video.msg-media { background: #000; }
     gap: 12px;
 }
 
+/* 検索結果の各アイテム */
 .search-result-item {
-    padding: 12px;
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
+    padding: 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
     cursor: pointer;
-    transition: all 0.2s;
-    background-color: #f8fafc;
+    transition: background-color 0.2s, border-color 0.2s;
+    background-color: var(--bg-main);
 }
 
 .search-result-item:hover {
-    border-color: #3b82f6;
-    background-color: #eff6ff;
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.1);
-    transform: translateY(-2px);
+    border-color: var(--text-secondary);
+    background-color: var(--bg-bubble); /* ホバーで1トーン明るいグレーへ */
+    box-shadow: none;
+    transform: none; /* ポップな浮き上がりを無くし、フラットに */
 }
 
 .search-result-header {
@@ -570,7 +631,9 @@ video.msg-media { background: #000; }
     gap: 10px;
     margin-bottom: 8px;
 }
-
+/* ==========================================================================
+   検索結果アイテム内のスタイル (Threads タイムライン準拠)
+   ========================================================================== */
 .search-result-avatar,
 .search-result-avatar-default {
     width: 32px;
@@ -581,8 +644,10 @@ video.msg-media { background: #000; }
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #e2e8f0;
+    background-color: var(--bg-surface); /* 明るいグレーからダークサーフェスへ */
+    color: var(--text-secondary);
     font-size: 16px;
+    border: 1px solid var(--border-color);
 }
 
 .search-result-avatar {
@@ -590,30 +655,140 @@ video.msg-media { background: #000; }
 }
 
 .search-result-username {
-    font-weight: bold;
-    color: #0f172a;
-    font-size: 14px;
+    font-weight: 800;
+    color: #ffffff !important; /* 💡 検索ポップアップ内の名前も「白」に統一 */
+    font-size: 15px;
 }
 
+
 .search-result-time {
-    color: #64748b;
+    color: var(--text-secondary);
     font-size: 12px;
     margin-left: auto;
 }
 
 .search-result-text {
-    color: #475569;
-    font-size: 13px;
+    color: #e1e1e1; /* 暗い画面で見やすいコントラストの白へ */
+    font-size: 13.5px;
     margin-bottom: 8px;
-    line-height: 1.4;
+    line-height: 1.5;
 }
 
+/* 返信（スレッド内投稿）であることを示すバッジ */
 .reply-badge {
     display: inline-block;
-    background-color: #dbeafe;
-    color: #1e40af;
+    background-color: #261a1a; /* 青からThreadsの会話感に合う極薄のボルドーグレーへ */
+    color: #fca5a5; /* 淡いピンクレッドで上品に主張 */
     font-size: 11px;
     padding: 4px 8px;
-    border-radius: 4px;
+    border-radius: 6px;
     margin-top: 4px;
+    font-weight: 600;
+    border: 1px solid #3a1e1e;
+}
+
+/* ==========================================================================
+   【自動更新対策版】リアクション・トグル機能のCSS固定 (Threads仕様)
+   ========================================================================== */
+
+/* ボタンと矢印を横並びにする枠（!importantを維持して上書きガード） */
+.react-btn-row {
+    display: inline-flex !important;
+    align-items: center !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 9999px !important;
+    background-color: var(--bg-surface) !important; /* 明るい白からダークサーフェスへ */
+    overflow: hidden !important;
+}
+
+/* 左側のリアクションボタン本体 */
+.react-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    padding: 4px 8px 4px 10px !important;
+    border: none !important;
+    background: transparent !important;
+    font-size: 13px !important;
+    cursor: pointer !important;
+    border-right: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+.react-btn:hover {
+    background-color: var(--bg-bubble) !important;
+}
+
+/* 右側の開閉専用「▼」ボタン */
+.react-toggle-arrow {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 4px 8px !important;
+    border: none !important;
+    background: transparent !important;
+    font-size: 10px !important;
+    color: var(--text-secondary) !important;
+    cursor: pointer !important;
+    visibility: visible !important;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.react-toggle-arrow:hover {
+    background-color: var(--bg-bubble) !important;
+    color: var(--text-primary) !important;
+}
+
+/* 開いているときは矢印を上向きに回転 */
+.react-toggle-arrow.active {
+    transform: rotate(180deg) !important;
+    color: #fb923c !important; /* 青からThreadsアクセントのネオンオレンジへ */
+    background-color: #261f1a !important; /* 淡いオレンジグレー背景 */
+}
+
+/* 展開されるユーザー名リストのエリア */
+.react-user-list {
+    display: none; 
+    flex-direction: column !important; 
+    gap: 4px !important;
+    background-color: var(--bg-surface) !important;
+    padding: 8px 12px !important;
+    border-radius: 12px !important;
+    font-size: 11.5px !important;
+    color: var(--text-primary) !important;
+    border-left: 2px solid var(--text-secondary) !important; /* 青から細いグレーの垂直線へ */
+    margin-left: 6px !important;
+    border-top: 1px solid var(--border-color) !important;
+    border-right: 1px solid var(--border-color) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+}
+
+/* リアクションメンバーのアイコン画像のサイズ調整 */
+.react-user-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important; 
+    white-space: nowrap;
+    padding: 2px 0;
+}
+
+/* プロフィール写真（丸型にくり抜く） */
+.react-user-avatar {
+    width: 16px !important;
+    height: 16px !important;
+    border-radius: 50% !important;
+    object-fit: cover;
+    border: 1px solid var(--border-color);
+}
+
+/* プロフィール写真がない場合のデフォルト影アイコン */
+.react-user-avatar-default {
+    width: 16px;
+    height: 16px;
+    font-size: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--bg-bubble);
+    color: var(--text-secondary);
+    border-radius: 50%;
+    border: 1px solid var(--border-color);
 }

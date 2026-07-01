@@ -31,10 +31,10 @@
 
             現在のユーザー: 
             <!-- プロフィールやログアウトへのリンクも、エラー防止のため一時的にすべて「#」に統一します -->
-            <a href="#" id="current-user" data-user-id="{{ request.user.id }}" onclick="location.href='/profile/'" style="color: #60a5fa; font-weight: bold; text-decoration: none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">
+            <a href="{% url 'my_profile' %}" id="current-user" data-user-id="{{ request.user.id }}" onclick="location.href='/profile/'" style="color: #60a5fa; font-weight: bold; text-decoration: none;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">
     {{ user.profile.nickname|default:user.username }}
             </a>
-            <form action="#" method="post" style="display:inline;">
+            <form action="{% url 'logout' %}" method="post" style="display:inline;">
                 {% csrf_token %}
                 <button type="submit" class="logout-btn">ログアウト</button>
             </form>

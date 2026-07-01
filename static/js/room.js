@@ -228,11 +228,48 @@ function updateReactionsAndText(m) {
         const r = m.reactions || {};
         let newHTML = '';
         
-        if (r.confirm > 0) newHTML += `<button class="react-btn" onclick="sendReaction(${m.id}, 'confirm')">👍 ${r.confirm}</button>`;
-        if (r.agree > 0) newHTML += `<button class="react-btn" onclick="sendReaction(${m.id}, 'agree')">❤️ ${r.agree}</button>`;
-        if (r.review > 0) newHTML += `<button class="react-btn" onclick="sendReaction(${m.id}, 'review')">😂 ${r.review}</button>`;
-        if (r.review2 > 0) newHTML += `<button class="react-btn" onclick="sendReaction(${m.id}, 'review2')">😮 ${r.review2}</button>`;
-        if (r.review3 > 0) newHTML += `<button class="react-btn" onclick="sendReaction(${m.id}, 'review3')">💪 ${r.review3}</button>`;
+        // 5つのリアクションの定義
+        const reactionTypes = [
+            { key: 'confirm', emoji: '👍' },
+            { key: 'agree',   emoji: '❤️' },
+            { key: 'review',  emoji: '😂' },
+            { key: 'review2', emoji: '😮' },
+            { key: 'review3', emoji: '💪' }
+        ];
+
+        reactionTypes.forEach(function(type) {
+            if (r[type.key] > 0) {
+                // 💡 自動更新前の「現在の開閉状態」と「中身のユーザーリスト」をあらかじめチェックして引き継ぐ
+                // .react-toggle-arrow[data-react-type="xxx"] を探す
+                const oldArrow = rBar.querySelector(`.react-toggle-arrow[data-react-type="${type.key}"]`);
+                const oldParentRow = oldArrow ? oldArrow.parentElement : null;
+                const oldUserListDiv = oldParentRow ? oldParentRow.nextElementSibling : null;
+
+                let isOpened = false;
+                let existingUsersHTML = '';
+
+                // もしすでに画面上にリストが存在し、かつ開いていた場合（displayがnoneじゃない場合）
+                if (oldUserListDiv && oldUserListDiv.style.display !== 'none') {
+                    isOpened = true;
+                    existingUsersHTML = oldUserListDiv.innerHTML; // 中身の「👤 ユーザー名」をそのままキープ
+                }
+
+                // 開きっぱなし状態（isOpened=true）なら、最初からスタイルを flex にし、矢印に active クラスを付与する
+                const displayStyle = isOpened ? 'flex' : 'none';
+                const arrowActiveClass = isOpened ? 'active' : '';
+
+                newHTML += `
+                    <div class="react-group-container">
+                        <div class="react-btn-row">
+                            <button class="react-btn" onclick="sendReaction(${m.id}, '${type.key}')">${type.emoji} ${r[type.key]}</button>
+                            <button class="react-toggle-arrow ${arrowActiveClass}" data-msg-id="${m.id}" data-react-type="${type.key}" onclick="toggleReactUsersList(this); event.stopPropagation();">▼</button>
+                        </div>
+                        <div class="react-user-list" style="display: ${displayStyle};">
+                            ${existingUsersHTML}
+                        </div>
+                    </div>`;
+            }
+        });
         
         if (rBar.innerHTML !== newHTML) {
             rBar.innerHTML = newHTML;
@@ -430,18 +467,51 @@ function renderMessage(targetEl, data, isReply) {
         });
     }
 
-
-
-
     const rBar = document.createElement('div');
     rBar.className = 'reaction-bar';
     const r = data.reactions || {};
     
-    if (r.confirm > 0) rBar.innerHTML += `<button class="react-btn" onclick="sendReaction(${data.id}, 'confirm')">👍 ${r.confirm}</button>`;
-    if (r.agree > 0) rBar.innerHTML += `<button class="react-btn" onclick="sendReaction(${data.id}, 'agree')">❤️ ${r.agree}</button>`;
-    if (r.review > 0) rBar.innerHTML += `<button class="react-btn" onclick="sendReaction(${data.id}, 'review')">😂 ${r.review}</button>`;
-    if (r.review2 > 0) rBar.innerHTML += `<button class="react-btn" onclick="sendReaction(${data.id}, 'review2')">😮 ${r.review2}</button>`;
-    if (r.review3 > 0) rBar.innerHTML += `<button class="react-btn" onclick="sendReaction(${data.id}, 'review3')">💪 ${r.review3}</button>`;
+    // 各リアクションボタンの直後に、独立した「▽」ボタンを配置します。
+    if (r.confirm > 0) rBar.innerHTML += `
+        <div class="react-group-container">
+            <div class="react-btn-row">
+                <button class="react-btn" onclick="sendReaction(${data.id}, 'confirm')">👍 ${r.confirm}</button>
+                <button class="react-toggle-arrow" data-msg-id="${data.id}" data-react-type="confirm" onclick="toggleReactUsersList(this); event.stopPropagation();">▼</button>
+            </div>
+            <div class="react-user-list" style="display: none;"></div>
+        </div>`;
+    if (r.agree > 0) rBar.innerHTML += `
+        <div class="react-group-container">
+            <div class="react-btn-row">
+                <button class="react-btn" onclick="sendReaction(${data.id}, 'agree')">❤️ ${r.agree}</button>
+                <button class="react-toggle-arrow" data-msg-id="${data.id}" data-react-type="agree" onclick="toggleReactUsersList(this); event.stopPropagation();">▼</button>
+            </div>
+            <div class="react-user-list" style="display: none;"></div>
+        </div>`;
+    if (r.review > 0) rBar.innerHTML += `
+        <div class="react-group-container">
+            <div class="react-btn-row">
+                <button class="react-btn" onclick="sendReaction(${data.id}, 'review')">😂 ${r.review}</button>
+                <button class="react-toggle-arrow" data-msg-id="${data.id}" data-react-type="review" onclick="toggleReactUsersList(this); event.stopPropagation();">▼</button>
+            </div>
+            <div class="react-user-list" style="display: none;"></div>
+        </div>`;
+    if (r.review2 > 0) rBar.innerHTML += `
+        <div class="react-group-container">
+            <div class="react-btn-row">
+                <button class="react-btn" onclick="sendReaction(${data.id}, 'review2')">😮 ${r.review2}</button>
+                <button class="react-toggle-arrow" data-msg-id="${data.id}" data-react-type="review2" onclick="toggleReactUsersList(this); event.stopPropagation();">▼</button>
+            </div>
+            <div class="react-user-list" style="display: none;"></div>
+        </div>`;
+    if (r.review3 > 0) rBar.innerHTML += `
+        <div class="react-group-container">
+            <div class="react-btn-row">
+                <button class="react-btn" onclick="sendReaction(${data.id}, 'review3')">💪 ${r.review3}</button>
+                <button class="react-toggle-arrow" data-msg-id="${data.id}" data-react-type="review3" onclick="toggleReactUsersList(this); event.stopPropagation();">▼</button>
+            </div>
+            <div class="react-user-list" style="display: none;"></div>
+        </div>`;
     
     container.appendChild(header);
     container.appendChild(contentBlock);
@@ -449,6 +519,45 @@ function renderMessage(targetEl, data, isReply) {
     
     wrapper.appendChild(container);
     targetEl.appendChild(wrapper);
+} // renderMessage 関数の終わり
+
+// 「▼」ボタンを押した時に裏でユーザー名を読み込んで下に開閉する関数
+function toggleReactUsersList(arrowElement) {
+    const parentRow = arrowElement.parentElement;
+    const userListDiv = parentRow ? parentRow.nextElementSibling : null;
+    if (!userListDiv) return;
+
+    if (userListDiv.style.display === 'flex') {
+        userListDiv.style.display = 'none';
+        arrowElement.classList.remove('active');
+        return;
+    }
+
+    const msgId = arrowElement.getAttribute('data-msg-id');
+    const reactType = arrowElement.getAttribute('data-react-type');
+
+    fetch(`/get_reaction_users/?msg_id=${msgId}&type=${reactType}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.users && data.users.length > 0) {
+                // 人の影（👤）の代わりに、アイコン画像（<img>）を生成するロジックに変更
+                userListDiv.innerHTML = data.users.map(user => {
+                    const avatarHtml = (user.icon_url && user.icon_url.trim() !== "")
+                        ? `<img src="${user.icon_url}" class="react-user-avatar" alt="icon">`
+                        : `<div class="react-user-avatar-default">👤</div>`;
+                    
+                    return `<span class="react-user-item">${avatarHtml}${user.name}</span>`;
+                }).join('');
+                
+                userListDiv.style.display = 'flex';
+                arrowElement.classList.add('active');
+            } else {
+                userListDiv.innerHTML = `<span class="react-user-item" style="color:#94a3b8; font-style:italic;">データがありません</span>`;
+                userListDiv.style.display = 'flex';
+                arrowElement.classList.add('active');
+            }
+        })
+        .catch(error => console.error('Error fetching reaction users:', error));
 }
 
 /* ==========================================================================
