@@ -368,12 +368,3 @@ def search_users(request):
     return JsonResponse({'users': user_list})
 
 # ミニゲーム
-from django.shortcuts import render
-def minigame_menu(request):
-    return render(request, 'chat/minigame_menu.html')
-def game_ranking(request):
-    return render(request, 'chat/game_ranking.html')
-def game_mahjong(request):
-    return render(request, 'chat/game_mahjong.html')
-def game_trump(request):
-    return render(request, 'chat/game_trump.html')

@@ -42,10 +42,7 @@ urlpatterns = [
     # 【新規追加】ユーザー検索の通信窓口URL（room.jsと連携）
     path('search_users/', chat_views.search_users, name='search_users'),
     # 【新規追加】ミニゲームへのアクセス窓口URL
-    path('minigames/', views.minigame_menu, name='minigame_menu'),
-    path('minigames/ranking/', views.game_ranking, name='game_ranking'),
-    path('minigames/mahjong/', views.game_mahjong, name='game_mahjong'),
-    path('minigames/trump/', views.game_trump, name='game_trump'),
+
 ]
 
 if settings.DEBUG:
