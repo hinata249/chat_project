@@ -3,6 +3,7 @@ from django.urls import path
 from django.contrib.auth import views as auth_views
 from django.conf import settings
 from django.conf.urls.static import static
+from chat import views
 
 #chatアプリとaccountアプリの両方のviewsをインポートします
 from chat import views as chat_views
@@ -42,7 +43,18 @@ urlpatterns = [
     # 【新規追加】ユーザー検索の通信窓口URL（room.jsと連携）
     path('search_users/', chat_views.search_users, name='search_users'),
     # 【新規追加】ミニゲームへのアクセス窓口URL
+    # 学習モードのURL
+    path('minigames/mahjong/learning/', views.learning_page, name='learning'),
 
+    # 麻雀の裏側で動く通信用URL群
+    path('minigames/mahjong/', views.game_mahjong, name='game_mahjong'),
+    path('tsumo/', views.tsumo, name='tsumo'),
+    path('declare_riichi/', views.declare_riichi, name='declare_riichi'),
+    path('declare_naki/', views.declare_naki, name='declare_naki'),
+    path('check_agari/', views.check_agari, name='check_agari'),
+    path('player_discard/', views.player_discard, name='player_discard'),
+    path('cpu_turn/', views.cpu_turn, name='cpu_turn'),
+    path('sync_next_kyoku/', views.sync_next_kyoku, name='sync_next_kyoku'),
 ]
 
 if settings.DEBUG:
