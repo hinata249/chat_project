@@ -388,9 +388,9 @@ function renderMessage(targetEl, data, isReply) {
     txt.className = 'msg-text';
     txt.textContent = data.text;
     
-    if (isReply && isMe) {
-        txt.style.backgroundColor = '#e0f2fe';
-    }
+    // if (isReply && isMe) {
+    //     txt.style.backgroundColor = '#e0f2fe';
+    // }
     
     if (data.text && data.text.trim() !== "") {
         contentBlock.appendChild(txt);
