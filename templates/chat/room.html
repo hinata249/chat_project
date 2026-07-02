@@ -157,5 +157,24 @@
             document.getElementById('minigame-modal').style.display = 'none';
         }
     </script>
+    <div id="report-modal" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000;">
+        <div class="modal-content" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 8px; width: 90%; max-width: 400px;">
+            <div class="modal-header">
+                <h2 style="margin: 0; color: #ef4444;">🚨 通報する</h2>
+                <button class="modal-close" onclick="closeReportModal()" style="cursor: pointer; border: none; background: none; font-size: 1.5rem;">&times;</button>
+            </div>
+            <div class="modal-body" style="margin-top: 15px;">
+                <p style="font-size: 14px; color: #475569; margin-bottom: 10px;">通報理由を詳しく入力してください。</p>
+                <textarea id="report-reason-input" placeholder="例：スパム投稿、不適切な発言など..." style="width: 100%; height: 100px; padding: 10px; border: 1px solid #cbd5e1; border-radius: 4px; resize: none;"></textarea>
+                
+                <input type="hidden" id="report-target-id" value="">
+                
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px;">
+                    <button onclick="closeReportModal()" style="padding: 8px 16px; background-color: #e2e8f0; color: #475569; border: none; border-radius: 4px; cursor: pointer;">キャンセル</button>
+                    <button onclick="submitReport()" style="padding: 8px 16px; background-color: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer;">通報を送信</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

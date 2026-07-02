@@ -40,6 +40,9 @@ urlpatterns = [
     path('notifications/', chat_views.notification_list, name='notifications'),
 
     path('delete_message', chat_views.delete_message, name='delete_message'),
+
+    # 通報機能
+    path('report_message', chat_views.report_message, name='report_message'),
      
     # 【新規追加】ユーザー検索の通信窓口URL（room.jsと連携）
     path('search_users/', chat_views.search_users, name='search_users'),

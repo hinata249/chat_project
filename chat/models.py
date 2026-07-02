@@ -30,3 +30,13 @@ class MessageReaction(models.Model):
     class Meta:
         # 同じ人が同じメッセージに同じ絵文字を複数回押せないように制限
         unique_together = ('message', 'username', 'react_type')
+
+# 通報機能
+class Report(models.Model):
+    reporter = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reports_made')
+    message = models.ForeignKey('ChatMessage', on_delete=models.CASCADE, related_name='reports')
+    reason = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"{self.reporter.username} 通報対象メッセージID: {self.message.id}"

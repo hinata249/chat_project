@@ -377,6 +377,16 @@ function renderMessage(targetEl, data, isReply) {
             document.getElementById('message-input').focus(); 
         };
         header.appendChild(rep);
+        // ここから通報ボタンの処理
+        const reportLink = document.createElement('span');
+        reportLink.className = 'action-link';
+        reportLink.style.color = '#ef4444'; 
+        reportLink.textContent = '[通報]';
+        reportLink.onclick = () => {
+            openReportModal(data.id);
+        };
+        header.appendChild(reportLink);
+        // ここまで通報ボタンの処理
     }
     
     const contentBlock = document.createElement('div');
@@ -975,3 +985,54 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+// ここから通報モーダルの処理
+function openReportModal(messageId) {
+    const modal = document.getElementById('report-modal');
+    const reasonInput = document.getElementById('report-reason-input');
+    const targetIdInput = document.getElementById('report-target-id');
+
+    if (modal && reasonInput && targetIdInput) {
+        targetIdInput.value = messageId;
+        reasonInput.value = '';
+        modal.style.display = 'block';
+        reasonInput.focus();
+    }
+}
+
+function closeReportModal() {
+    const modal = document.getElementById('report-modal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+function submitReport() {
+    const reasonInput = document.getElementById('report-reason-input');
+    const targetIdInput = document.getElementById('report-target-id');
+    
+    if (!reasonInput || !targetIdInput) return;
+
+    const reason = reasonInput.value.trim();
+    const messageId = targetIdInput.value;
+
+    if (reason === "") {
+        alert("通報理由を入力してください。");
+        return;
+    }
+
+    fetch('/report_message', {
+        method: 'POST',
+        headers: { 
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value 
+        },
+        body: JSON.stringify({ id: messageId, reason: reason })
+    }).then(() => {
+        alert("通報を完了しました。運営が確認します。");
+        closeReportModal();
+    }).catch(error => {
+        console.error('Report error:', error);
+        alert("エラーが発生しました。");
+    });
+}
+// ここまで通報モーダルの処理

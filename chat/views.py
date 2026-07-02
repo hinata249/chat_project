@@ -1,11 +1,11 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.http import JsonResponse
 import random
 import math
 import json
-from .models import ChatMessage, MessageReaction
+from .models import ChatMessage, MessageReaction, Report
 from accounts.models import Notification
 
 
@@ -442,7 +442,26 @@ def get_reaction_users(request):
         
     return JsonResponse({'users': users_list})
 
-# ミニゲーム
+# 通報機能
+@login_required
+def report_message(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            message_id = data.get('id')
+            reason = data.get('reason', '通報理由なし')
+            
+            target_message = get_object_or_404(ChatMessage, id=message_id)
+            Report.objects.create(reporter=request.user, message=target_message, reason=reason)
+            
+            return JsonResponse({'status': 'success'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+    return JsonResponse({'status': 'error'}, status=400)
+
+
+
+# 麻雀
 
 MANZU = [f"{i}萬" for i in range(1, 10)]
 PINZU = [f"{i}筒" for i in range(1, 10)]
